@@ -1,0 +1,136 @@
+<style>
+  @font-face {
+    font-family: 'Carlito';
+    src: local('Calibri'), local('Calibri Regular');
+  }
+
+  /* Reset common hostinger/builder paddings that cause offset */
+  .page-grid, .page-grid * {
+    box-sizing: border-box;
+  }
+  /* VERY IMPORTANT: remove outer padding so grid lines match container edges */
+  .page-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 !important;     /* kills builder padding */
+    margin-left: 0 !important; /* kills builder margins */
+    padding-left: 0 !important;/* kills wrapper padding */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+  /* Inner wrapper that spans columns 2..12 (10 columns wide) */
+  /* Make all items in the same row equal height */
+.content-10col {
+  grid-column: 2 / 12;
+  display: grid;
+  gap: 40px;
+  align-items: stretch;       /* <-- important */
+  padding: 18px 0;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;        /* <-- makes every row equal height */
+}
+
+  /* Breakpoints to guarantee 3 per row on laptop */
+  @media (min-width: 700px) {
+    .content-10col { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .content-10col { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Ensure builder doesn't inject unexpected left margin on first child */
+  .content-10col > * { margin: 0; }
+
+  /* Make each box stretch so the gold line matches height */
+  .research-box {
+  display: flex;
+  gap: 18px;
+  align-items: stretch;       /* <-- stretches children to the full height */
+  height: 100%;
+}
+
+  /* GOLD LINE: stretch with content; no fixed min-height */
+  .research-line {
+  border-left: 5px solid #d4a017 !important;
+  align-self: stretch;    /* <-- ensures it grows to full height */
+  height: auto;
+  flex-shrink: 0;
+  width: 0;
+}
+
+  .research-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .research-content h3 {
+    font-family: Carlito, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #f8f6f2;
+    line-height: 1.3;
+  }
+
+  .research-content p {
+    font-family: Carlito, sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    margin: 0;
+    color: #f8f6f2;
+    line-height: 1.5;
+    text-align: justify;
+  }
+
+  /* On small screens use full-width (so left/right gutters don't crowd) */
+  @media (max-width: 900px) {
+    .content-10col { grid-column: 1 / -1; padding: 12px 0; }
+  }
+</style>
+
+<div class="page-grid">
+  <div class="content-10col">
+
+    <div class="research-box">
+      <div class="research-line"></div>
+      <div class="research-content">
+        <h3>Role of Indian Courts in Shaping Societal Norms and Beliefs</h3>
+        <p>
+          Explores how judicial decisions act as cultural catalysts, redefining ethics and altering
+          public behaviour. The judiciary is framed as a shaper of social consciousness—not merely an
+          interpreter of legal doctrine.
+        </p>
+      </div>
+    </div>
+
+    <div class="research-box">
+      <div class="research-line"></div>
+      <div class="research-content">
+        <h3>Indian Media and Digital Democracy</h3>
+        <p>
+          Analyses how digital media cultures redefine political authority, public discourse, and 
+          citizen psychology. It investigates how information ecosystems influence legitimacy, 
+          polarization, and democratic resilience.
+        </p>
+      </div>
+    </div>
+
+    <div class="research-box">
+      <div class="research-line"></div>
+      <div class="research-content">
+        <h3>Queer Linguistics and Cultural Meaning</h3>
+        <p>
+          Examines how language constructs identity, visibility, and exclusion. The work maps the 
+          evolution of queer vocabulary and explores how linguistic agency empowers or restricts 
+          marginalized communities.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

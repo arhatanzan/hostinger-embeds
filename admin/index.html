@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Block builder · hostinger-embeds</title>
+<style>
+  :root { --gold: #d4a017; --navy: #0a2342; --line: #d9dde3; --muted: #5a6673; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d2733; background: #eef0f3; }
+  header { background: var(--navy); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 16px; margin: 0; flex: 1; }
+  main { display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 16px; padding: 16px; align-items: start; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  label { display: block; font-weight: 600; margin: 10px 0 4px; }
+  input[type=text], input[type=url], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; }
+  textarea { min-height: 110px; resize: vertical; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row > .grow { flex: 1; }
+  .check { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; margin: 6px 14px 0 0; }
+  button, .btn { font: inherit; padding: 7px 12px; border-radius: 5px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-decoration: none; color: inherit; display: inline-block; }
+  button:hover, .btn:hover { border-color: #9aa3ae; }
+  .primary { background: var(--gold) !important; border-color: var(--gold) !important; color: var(--navy) !important; font-weight: 700; }
+  .is-disabled, button:disabled { opacity: .45; pointer-events: none; }
+  .item { border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+  .item-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .item-head button { padding: 2px 8px; font-size: 12px; }
+  .hint { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+  .status { font-size: 12px; margin-top: 4px; min-height: 1em; }
+  .warn { color: #9a3412; } .err { color: #b91c1c; } .ok { color: #15803d; }
+  .preview-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .preview-bar button.active { border-color: var(--navy); background: #e8ecf2; }
+  iframe { width: 100%; height: 200px; border: 1px dashed #b8bec7; display: block; margin: 0 auto; background: #fff; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 6px; overflow: auto; max-height: 360px; font-size: 12px; white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; }
+  ol.steps { padding-left: 18px; margin: 0; } ol.steps li { margin-bottom: 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Block builder</h1>
+  <button id="newBtn" type="button">New block</button>
+</header>
+
+<main>
+  <div>
+    <section class="panel">
+      <h2>Block</h2>
+
+      <label for="existing">Edit an existing block</label>
+      <div class="row">
+        <select id="existing" class="grow"><option value="">Loading list…</option></select>
+        <button id="loadBtn" type="button">Load</button>
+      </div>
+      <div id="loadStatus" class="status"></div>
+
+      <label for="name">Block name</label>
+      <input id="name" type="text" placeholder="e.g. early_leadership" autocomplete="off" spellcheck="false">
+      <div id="nameStatus" class="status"></div>
+
+      <label for="layout">Layout</label>
+      <select id="layout"></select>
+
+      <div data-opt="theme">
+        <label for="theme">Text colour</label>
+        <select id="theme">
+          <option value="kb-dark">Light text (for dark sections)</option>
+          <option value="kb-light">Navy text (for light sections)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="check" data-opt="goldTitles"><input type="checkbox" id="goldTitles"> Gold headings</label>
+        <label class="check" data-opt="compact"><input type="checkbox" id="compact"> Smaller text</label>
+        <label class="check" data-opt="fourUp"><input type="checkbox" id="fourUp"> 4 per row on desktop</label>
+        <label class="check" data-opt="full"><input type="checkbox" id="full"> Full width (no side gutters)</label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Items</h2>
+      <div id="items"></div>
+      <button id="addItem" type="button">+ Add item</button>
+      <p class="hint">
+        Formatting: <code>**bold**</code>, <code>*italic*</code>. Blank line = new paragraph.
+        Lines starting with <code>- </code> become a bullet list. HTML is not allowed (it is escaped).
+      </p>
+    </section>
+  </div>
+
+  <div>
+    <section class="panel">
+      <h2>Preview</h2>
+      <div class="preview-bar">
+        <button type="button" data-w="100%" class="active">Desktop</button>
+        <button type="button" data-w="820px">Tablet</button>
+        <button type="button" data-w="390px">Mobile</button>
+        <label class="check" style="margin-left:auto">Section background <input type="color" id="bg"></label>
+      </div>
+      <iframe id="preview" title="Block preview" sandbox="allow-same-origin"></iframe>
+      <p class="hint">Uses this site's <code>assets/css/blocks.css</code>, so it looks the same as on Hostinger.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Publish</h2>
+      <ol class="steps">
+        <li>
+          <div class="row">
+            <a id="ghBtn" class="btn primary" target="_blank" rel="noopener">Create on GitHub</a>
+            <button id="copyHtml" type="button">Copy HTML</button>
+            <button id="download" type="button">Download .html</button>
+          </div>
+          <div id="ghHint" class="hint"></div>
+        </li>
+        <li>
+          After committing, refresh the CDN cache:
+          <a id="purge" target="_blank" rel="noopener"></a>
+        </li>
+        <li>
+          New block only: paste this into a Hostinger <em>Embed code</em> element.
+          <pre id="embed"></pre>
+          <button id="copyEmbed" type="button">Copy embed code</button>
+        </li>
+      </ol>
+      <details>
+        <summary>Generated HTML</summary>
+        <pre id="output"></pre>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var REPO = "arhatanzan/hostinger-embeds";
+  var BRANCH = "main";
+  var CDN = "https://cdn.jsdelivr.net/gh/" + REPO + "@" + BRANCH + "/";
+  var CSS_URL = new URL("../assets/css/blocks.css", location.href).href;
+  var DRAFT_KEY = "kb-block-builder-draft";
+  var NAME_RE = /^[a-z0-9_-]+$/;
+
+  var LAYOUTS = {
+    split:   { label: "Columns with centre divider", fields: ["title", "subtitle", "body", "cite"], opts: ["theme", "goldTitles", "compact", "full"], item: "kb-split-item" },
+    line:    { label: "Gold-line items (1–4 per row)", fields: ["title", "subtitle", "body", "cite"], opts: ["theme", "goldTitles", "compact", "fourUp", "full"], item: "kb-line-item" },
+    pills:   { label: "Bordered highlight boxes (grid)", fields: ["title", "short"], opts: ["theme", "fourUp", "full"] },
+    pillrow: { label: "Metric pills (centred row)", fields: ["title", "short"], opts: [] },
+    cards:   { label: "Gold-framed cards", fields: ["title", "body"], opts: [] }
+  };
+  var DEFAULT_BG = { "kb-dark": "#5c6776", "kb-light": "#f8f6f2", other: "#ffffff" };
+
+  var $ = function (s) { return document.querySelector(s); };
+  var remoteNames = [];
+  var state;
+
+  function blankItem() { return { title: "", subtitle: "", body: "", citeText: "", citeUrl: "" }; }
+  function blankState() {
+    return { name: "", layout: "split", theme: "kb-dark", goldTitles: false, compact: false, fourUp: false, full: false, bg: DEFAULT_BG["kb-dark"], loadedFrom: "", items: [blankItem(), blankItem()] };
+  }
+
+  // ---------- HTML generation ----------
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function inline(s) {
+    return esc(String(s).replace(/\s+/g, " ").trim())
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>");
+  }
+  function safeUrl(u) {
+    try {
+      var url = new URL(String(u).trim());
+      return /^https?:$/.test(url.protocol) ? url.href : "";
+    } catch (e) { return ""; }
+  }
+  function indent(str, n) {
+    var pad = new Array(n + 1).join(" ");
+    return str.split("\n").map(function (l) { return pad + l; }).join("\n");
+  }
+  function bodyBlocks(text) {
+    var out = [];
+    String(text).split(/\n\s*\n/).forEach(function (chunk) {
+      var para = [], list = [];
+      function flushP() { if (para.length) out.push("<p>" + inline(para.join(" ")) + "</p>"); para = []; }
+      function flushL() {
+        if (list.length) out.push("<ul>\n" + list.map(function (li) { return "  <li>" + inline(li) + "</li>"; }).join("\n") + "\n</ul>");
+        list = [];
+      }
+      chunk.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (l) {
+        if (/^-\s+/.test(l)) { flushP(); list.push(l.replace(/^-\s+/, "")); }
+        else { flushL(); para.push(l); }
+      });
+      flushP(); flushL();
+    });
+    return out;
+  }
+
+  function itemHtml(it) {
+    var L = state.layout, parts = [];
+    if (L === "pills" || L === "pillrow") {
+      var spans = "";
+      if (it.title.trim()) spans += '<span class="kb-pill-num">' + inline(it.title) + "</span>";
+      if (it.body.trim()) spans += '<span class="kb-pill-sub">' + inline(it.body) + "</span>";
+      return '<div class="kb-pill"><div>' + spans + "</div></div>";
+    }
+    if (it.title.trim()) parts.push("<h3>" + inline(it.title) + "</h3>");
+    if (L !== "cards" && it.subtitle.trim()) parts.push("<h4>" + inline(it.subtitle) + "</h4>");
+    parts = parts.concat(bodyBlocks(it.body));
+    var url = safeUrl(it.citeUrl);
+    if (L !== "cards" && url && it.citeText.trim()) {
+      parts.push('<p class="kb-citation"><em>Citation: <a href="' + esc(url) + '" target="_blank" rel="noopener">' + inline(it.citeText) + "</a></em></p>");
+    }
+    var cls = L === "cards" ? "kb-card" : LAYOUTS[L].item;
+    return '<div class="' + cls + '">\n' + indent(parts.join("\n"), 2) + "\n</div>";
+  }
+
+  function build() {
+    var L = state.layout, opts = LAYOUTS[L].opts;
+    var on = function (o) { return opts.indexOf(o) !== -1 && state[o]; };
+    var items = state.items
+      .filter(function (it) { return it.title.trim() || it.body.trim() || it.subtitle.trim(); })
+      .map(itemHtml).join("\n");
+
+    if (L === "cards") return '<div class="kb-cards">\n' + indent(items, 2) + "\n</div>\n";
+    var region = ' role="region" aria-label="' + esc(state.ariaLabel || state.name || "Key metrics") + '"';
+    if (L === "pillrow") {
+      return '<div class="kb-pill-row kb-light"' + region + '>\n' + indent(items, 2) + "\n</div>\n";
+    }
+    var outer = ["kb-page", state.theme];
+    if (on("goldTitles")) outer.push("kb-gold-titles");
+    if (on("compact")) outer.push("kb-compact");
+    var inner = ["kb-10col"];
+    if (L === "split") inner.push("kb-split");
+    if (L === "pills") inner.push("kb-pills");
+    if (on("fourUp")) inner.push("kb-4up");
+    if (on("full")) inner.push("kb-full");
+    return '<div class="' + outer.join(" ") + '"' + (state.ariaLabel ? region : "") + '>\n  <div class="' + inner.join(" ") + '">\n' + indent(items, 4) + "\n  </div>\n</div>\n";
+  }
+
+  // ---------- Parsing an existing block back into the form ----------
+  function md(node) {
+    var s = "";
+    node.childNodes.forEach(function (n) {
+      if (n.nodeType === 3) { s += n.textContent; return; }
+      if (n.nodeType !== 1) return;
+      var t = n.tagName, inner = md(n);
+      if (t === "STRONG" || t === "B") s += "**" + inner + "**";
+      else if (t === "EM" || t === "I") s += "*" + inner + "*";
+      else s += " " + inner + " ";
+    });
+    return s.replace(/\s+/g, " ").trim();
+  }
+
+  function parse(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var root = doc.body.firstElementChild;
+    if (!root) throw new Error("empty file");
+    var inner = root.querySelector(".kb-10col");
+    var has = function (el, c) { return !!el && el.classList.contains(c); };
+    var s = blankState();
+    s.layout = has(root, "kb-cards") ? "cards" : has(root, "kb-pill-row") ? "pillrow" : has(inner, "kb-split") ? "split" : has(inner, "kb-pills") ? "pills" : "line";
+    s.theme = has(root, "kb-light") ? "kb-light" : "kb-dark";
+    s.goldTitles = has(root, "kb-gold-titles");
+    s.compact = has(root, "kb-compact");
+    s.fourUp = has(inner, "kb-4up");
+    s.full = has(inner, "kb-full");
+    s.ariaLabel = root.getAttribute("aria-label") || "";
+    s.items = Array.prototype.map.call(root.querySelectorAll(".kb-line-item, .kb-split-item, .kb-card, .kb-pill"), function (el) {
+      var it = blankItem();
+      var t = el.querySelector("h3, .kb-pill-num"); if (t) it.title = md(t);
+      var h4 = el.querySelector("h4"); if (h4) it.subtitle = md(h4);
+      var cite = el.querySelector("p.kb-citation a");
+      if (cite) { it.citeText = md(cite); it.citeUrl = cite.getAttribute("href") || ""; }
+      var sub = el.querySelector(".kb-pill-sub");
+      if (sub) { it.body = md(sub); return it; }
+      var parts = [];
+      Array.prototype.forEach.call(el.children, function (c) {
+        if (c.tagName === "P" && !c.classList.contains("kb-citation")) parts.push(md(c));
+        else if (c.tagName === "UL") parts.push(Array.prototype.map.call(c.children, function (li) { return "- " + md(li); }).join("\n"));
+      });
+      it.body = parts.join("\n\n");
+      return it;
+    });
+    if (!s.items.length) s.items = [blankItem()];
+    s.bg = defaultBg(s);
+    return s;
+  }
+
+  function defaultBg(s) {
+    return LAYOUTS[s.layout].opts.indexOf("theme") !== -1 ? DEFAULT_BG[s.theme] : DEFAULT_BG.other;
+  }
+
+  // ---------- Form ----------
+  function fieldHtml(f, L) {
+    var short = L === "pills" || L === "pillrow";
+    switch (f) {
+      case "title": return '<label>' + (short ? "Number / heading" : "Heading") + '</label><input type="text" data-f="title">';
+      case "subtitle": return '<label>Sub-heading <span class="hint">(optional)</span></label><input type="text" data-f="subtitle">';
+      case "short": return '<label>Label</label><input type="text" data-f="body">';
+      case "body": return '<label>Text</label><textarea data-f="body"></textarea>';
+      case "cite": return '<label>Citation <span class="hint">(optional)</span></label><div class="row"><input type="text" class="grow" data-f="citeText" placeholder="Link text"><input type="url" class="grow" data-f="citeUrl" placeholder="https://…"></div>';
+    }
+    return "";
+  }
+
+  function renderItems() {
+    var box = $("#items"), L = state.layout;
+    box.innerHTML = "";
+    state.items.forEach(function (it, i) {
+      var d = document.createElement("div");
+      d.className = "item";
+      d.dataset.i = i;
+      d.innerHTML = '<div class="item-head"><strong>Item ' + (i + 1) + '</strong><span>' +
+        '<button type="button" data-act="up" title="Move up">↑</button> ' +
+        '<button type="button" data-act="down" title="Move down">↓</button> ' +
+        '<button type="button" data-act="dup">Duplicate</button> ' +
+        '<button type="button" data-act="del">Remove</button></span></div>' +
+        LAYOUTS[L].fields.map(function (f) { return fieldHtml(f, L); }).join("");
+      d.querySelectorAll("[data-f]").forEach(function (inp) { inp.value = it[inp.dataset.f] || ""; });
+      box.appendChild(d);
+    });
+  }
+
+  function renderControls() {
+    $("#name").value = state.name;
+    $("#layout").value = state.layout;
+    $("#theme").value = state.theme;
+    ["goldTitles", "compact", "fourUp", "full"].forEach(function (k) { $("#" + k).checked = !!state[k]; });
+    $("#bg").value = state.bg;
+    var opts = LAYOUTS[state.layout].opts;
+    document.querySelectorAll("[data-opt]").forEach(function (el) { el.hidden = opts.indexOf(el.dataset.opt) === -1; });
+    renderItems();
+  }
+
+  // ---------- Output ----------
+  var previewTimer;
+  function fitPreview() {
+    var f = $("#preview");
+    try { f.style.height = f.contentDocument.documentElement.scrollHeight + "px"; } catch (e) {}
+  }
+  function renderPreview(html) {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function () {
+      $("#preview").srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<link rel="stylesheet" href="' + esc(CSS_URL) + '"><style>body{margin:0;padding:24px 16px;background:' + esc(state.bg) + '}</style></head><body>' + html + "</body></html>";
+    }, 150);
+  }
+
+  function nameInfo() {
+    var n = state.name;
+    if (!n) return { ok: false, cls: "err", msg: "Enter a name (lowercase letters, numbers, - or _)." };
+    if (!NAME_RE.test(n)) return { ok: false, cls: "err", msg: "Only lowercase letters, numbers, - and _ are allowed." };
+    var exists = remoteNames.indexOf(n) !== -1;
+    if (exists && state.loadedFrom === n) return { ok: true, exists: true, cls: "ok", msg: "Editing existing block “" + n + "”." };
+    if (exists) return { ok: true, exists: true, cls: "warn", msg: "A block called “" + n + "” already exists. Publishing will replace it — load it first or pick another name." };
+    return { ok: true, exists: false, cls: "ok", msg: "New block." };
+  }
+
+  function update() {
+    var html = build();
+    var info = nameInfo();
+    var file = "blocks/" + state.name + ".html";
+
+    $("#output").textContent = html;
+    renderPreview(html);
+
+    $("#nameStatus").className = "status " + info.cls;
+    $("#nameStatus").textContent = info.msg;
+
+    var gh = $("#ghBtn");
+    ["#ghBtn", "#copyHtml", "#download", "#copyEmbed"].forEach(function (s) { $(s).classList.toggle("is-disabled", !info.ok); });
+    if (info.ok && info.exists) {
+      gh.textContent = "Copy HTML & open GitHub editor";
+      gh.href = "https://github.com/" + REPO + "/edit/" + BRANCH + "/" + file;
+      $("#ghHint").textContent = "The HTML is copied to your clipboard. In the GitHub editor select all, paste, then “Commit changes”.";
+    } else {
+      gh.textContent = "Create on GitHub";
+      gh.href = "https://github.com/" + REPO + "/new/" + BRANCH + "/blocks?filename=" + encodeURIComponent(state.name + ".html") + "&value=" + encodeURIComponent(html);
+      $("#ghHint").textContent = "Opens GitHub with the file pre-filled. Review it, then “Commit changes”.";
+    }
+
+    var purge = "https://purge.jsdelivr.net/gh/" + REPO + "@" + BRANCH + "/" + file;
+    $("#purge").href = purge;
+    $("#purge").textContent = info.ok ? purge : "(enter a valid name)";
+    $("#embed").textContent = '<div data-kb-block="' + (info.ok ? state.name : "…") + '"></div>\n<script src="' + CDN + 'assets/js/blocks.js"><\/script>';
+
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function copy(text, btn) {
+    navigator.clipboard.writeText(text).then(function () {
+      var old = btn.textContent;
+      btn.textContent = "Copied ✓";
+      setTimeout(function () { btn.textContent = old; }, 1500);
+    });
+  }
+
+  // ---------- Existing blocks ----------
+  function loadList() {
+    fetch("https://api.github.com/repos/" + REPO + "/contents/blocks?ref=" + BRANCH)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (files) {
+        remoteNames = files.filter(function (f) { return /\.html$/.test(f.name); }).map(function (f) { return f.name.replace(/\.html$/, ""); });
+        $("#existing").innerHTML = '<option value="">— choose —</option>' + remoteNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + "</option>"; }).join("");
+        update();
+      })
+      .catch(function () {
+        $("#existing").innerHTML = '<option value="">(could not load list)</option>';
+        $("#loadStatus").className = "status warn";
+        $("#loadStatus").textContent = "Couldn't load the block list from GitHub (is blocks/ pushed?), so name clashes can't be checked.";
+      });
+  }
+
+  function fetchBlock(name) {
+    var local = new URL("../blocks/" + name + ".html", location.href).href;
+    var raw = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/blocks/" + name + ".html";
+    var get = function (u) { return fetch(u, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }); };
+    return get(raw).catch(function () { return get(local); });
+  }
+
+  // ---------- Wiring ----------
+  Object.keys(LAYOUTS).forEach(function (k) {
+    var o = document.createElement("option");
+    o.value = k; o.textContent = LAYOUTS[k].label;
+    $("#layout").appendChild(o);
+  });
+
+  $("#name").addEventListener("input", function (e) {
+    state.name = e.target.value.toLowerCase().replace(/\s/g, "_");
+    e.target.value = state.name;
+    update();
+  });
+  $("#layout").addEventListener("change", function (e) { state.layout = e.target.value; state.bg = defaultBg(state); renderControls(); update(); });
+  $("#theme").addEventListener("change", function (e) { state.theme = e.target.value; state.bg = defaultBg(state); $("#bg").value = state.bg; update(); });
+  ["goldTitles", "compact", "fourUp", "full"].forEach(function (k) {
+    $("#" + k).addEventListener("change", function (e) { state[k] = e.target.checked; update(); });
+  });
+  $("#bg").addEventListener("input", function (e) { state.bg = e.target.value; update(); });
+
+  $("#items").addEventListener("input", function (e) {
+    var f = e.target.dataset.f;
+    if (!f) return;
+    state.items[+e.target.closest(".item").dataset.i][f] = e.target.value;
+    update();
+  });
+  $("#items").addEventListener("click", function (e) {
+    var act = e.target.dataset.act;
+    if (!act) return;
+    var i = +e.target.closest(".item").dataset.i, items = state.items;
+    if (act === "up" && i > 0) items.splice(i - 1, 0, items.splice(i, 1)[0]);
+    if (act === "down" && i < items.length - 1) items.splice(i + 1, 0, items.splice(i, 1)[0]);
+    if (act === "dup") items.splice(i + 1, 0, JSON.parse(JSON.stringify(items[i])));
+    if (act === "del" && (items.length > 1 || confirm("Remove the last item?"))) { items.splice(i, 1); if (!items.length) items.push(blankItem()); }
+    renderItems();
+    update();
+  });
+  $("#addItem").addEventListener("click", function () { state.items.push(blankItem()); renderItems(); update(); });
+
+  $("#newBtn").addEventListener("click", function () {
+    if (!confirm("Start a new block? The current draft will be cleared.")) return;
+    state = blankState();
+    renderControls();
+    update();
+  });
+
+  $("#loadBtn").addEventListener("click", function () {
+    var name = $("#existing").value;
+    if (!name) return;
+    $("#loadStatus").className = "status";
+    $("#loadStatus").textContent = "Loading…";
+    fetchBlock(name).then(function (html) {
+      state = parse(html);
+      state.name = name;
+      state.loadedFrom = name;
+      renderControls();
+      update();
+      $("#loadStatus").className = "status ok";
+      $("#loadStatus").textContent = "Loaded “" + name + "”. Check the preview matches the live block before publishing.";
+    }).catch(function (err) {
+      $("#loadStatus").className = "status err";
+      $("#loadStatus").textContent = "Couldn't load: " + err.message;
+    });
+  });
+
+  $("#ghBtn").addEventListener("click", function () {
+    if (nameInfo().exists) navigator.clipboard.writeText(build());
+  });
+  $("#copyHtml").addEventListener("click", function (e) { copy(build(), e.target); });
+  $("#copyEmbed").addEventListener("click", function (e) { copy($("#embed").textContent, e.target); });
+  $("#download").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([build()], { type: "text/html" }));
+    a.download = state.name + ".html";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  document.querySelectorAll(".preview-bar [data-w]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".preview-bar [data-w]").forEach(function (x) { x.classList.toggle("active", x === b); });
+      $("#preview").style.width = b.dataset.w;
+      setTimeout(fitPreview, 50);
+    });
+  });
+  $("#preview").addEventListener("load", function () { fitPreview(); setTimeout(fitPreview, 600); });
+
+  try { state = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (e) {}
+  if (!state || !LAYOUTS[state.layout] || !Array.isArray(state.items)) state = blankState();
+  renderControls();
+  update();
+  loadList();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!-- Metrics row (Quicksand font + palette matched) -->
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --pill-bg: transparent;
+    --pill-border: #d4a017;
+    --text-main: #f8f6f2;
+    --pill-radius: 8px;
+    --pill-padding: 14px 28px;
+    --gap: 18px;
+    --max-width: 1200px;
+  }
+
+  /* 12-column outer grid */
+  .page-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0;                           /* no extra column gaps */
+    max-width: var(--max-width);
+    margin: 0 auto;                   /* center the 12-col grid */
+    padding: 0 !important;            /* kill builder padding */
+    margin-left: 0 !important;        /* kill builder overrides */
+    padding-left: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Inner wrapper that spans columns 2..12 (10 columns wide) */
+  .metrics-10col {
+    grid-column: 2 / 12;              /* exactly 10 tracks wide */
+    display: grid;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* On narrow screens, let it use full width */
+  @media (max-width: 900px) {
+    .metrics-10col {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .metrics-section {
+    background: transparent;
+    padding: 18px 0;
+    margin: 0 !important;
+  }
+
+  .metrics-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+    padding: 0;
+    margin: 0;
+  }
+
+  /* 2 per row on tablets */
+  @media (min-width: 700px) {
+    .metrics-inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* 3 per row on laptops/desktops */
+  @media (min-width: 1024px) {
+    .metrics-inner {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .metric-pill {
+    background: var(--pill-bg);
+    border: 4px solid var(--pill-border);
+    border-radius: var(--pill-radius);
+    padding: var(--pill-padding);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;  /* let grid control width */
+  }
+
+  .metric-text {
+    font-family: "Quicksand", sans-serif;
+    color: var(--text-main);
+    line-height: 1.35;
+  }
+
+  .metric-number {
+    display: block;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .metric-sub {
+    display: block;
+    font-weight: 400;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+</style>
+
+<div class="page-grid">
+  <div class="metrics-10col">
+
+    <div class="metrics-section" role="region" aria-label="Evaluation & Jury Framework">
+      <div class="metrics-inner">
+
+        <!-- Pill 1 -->
+        <div class="metric-pill">
+          <div class="metric-text">
+            <span class="metric-number">Domains Evaluated</span>
+            <span class="metric-sub">
+              Journalism · Governance · Social Impact · Education · Digital Democracy · Leadership
+            </span>
+          </div>
+        </div>
+
+        <!-- Pill 2 -->
+        <div class="metric-pill">
+          <div class="metric-text">
+            <span class="metric-number">Evaluation Depth</span>
+            <span class="metric-sub">
+              Portfolio Reviews · Structured Scoring · Panel Deliberation · Finalist Vetting
+            </span>
+          </div>
+        </div>
+
+        <!-- Pill 3 -->
+        <div class="metric-pill">
+          <div class="metric-text">
+            <span class="metric-number">Equity Focus</span>
+            <span class="metric-sub">
+              Advocating representation for underrepresented communities in evaluation ecosystems
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
