@@ -116,8 +116,8 @@
           <div id="ghHint" class="hint"></div>
         </li>
         <li>
-          After committing, refresh the CDN cache:
-          <a id="purge" target="_blank" rel="noopener"></a>
+          After committing, Netlify redeploys automatically (about a minute). Check it at
+          <a id="live" target="_blank" rel="noopener"></a>
         </li>
         <li>
           New block only: paste this into a Hostinger <em>Embed code</em> element.
@@ -139,7 +139,7 @@
 
   var REPO = "arhatanzan/hostinger-embeds";
   var BRANCH = "main";
-  var CDN = "https://cdn.jsdelivr.net/gh/" + REPO + "@" + BRANCH + "/";
+  var SITE = "https://arhatembeds.netlify.app/";
   var CSS_URL = new URL("../assets/css/blocks.css", location.href).href;
   var DRAFT_KEY = "kb-block-builder-draft";
   var NAME_RE = /^[a-z0-9_-]+$/;
@@ -363,7 +363,7 @@
   function update() {
     var html = build();
     var info = nameInfo();
-    var file = "blocks/" + state.name + ".html";
+    var file = "public/blocks/" + state.name + ".html";
 
     $("#output").textContent = html;
     renderPreview(html);
@@ -379,14 +379,14 @@
       $("#ghHint").textContent = "The HTML is copied to your clipboard. In the GitHub editor select all, paste, then “Commit changes”.";
     } else {
       gh.textContent = "Create on GitHub";
-      gh.href = "https://github.com/" + REPO + "/new/" + BRANCH + "/blocks?filename=" + encodeURIComponent(state.name + ".html") + "&value=" + encodeURIComponent(html);
+      gh.href = "https://github.com/" + REPO + "/new/" + BRANCH + "/public/blocks?filename=" + encodeURIComponent(state.name + ".html") + "&value=" + encodeURIComponent(html);
       $("#ghHint").textContent = "Opens GitHub with the file pre-filled. Review it, then “Commit changes”.";
     }
 
-    var purge = "https://purge.jsdelivr.net/gh/" + REPO + "@" + BRANCH + "/" + file;
-    $("#purge").href = purge;
-    $("#purge").textContent = info.ok ? purge : "(enter a valid name)";
-    $("#embed").textContent = '<div data-kb-block="' + (info.ok ? state.name : "…") + '"></div>\n<script src="' + CDN + 'assets/js/blocks.js"><\/script>';
+    var live = SITE + "blocks/" + state.name + ".html";
+    $("#live").href = live;
+    $("#live").textContent = info.ok ? live : "(enter a valid name)";
+    $("#embed").textContent = '<div data-kb-block="' + (info.ok ? state.name : "…") + '"></div>\n<script src="' + SITE + 'assets/js/blocks.js"><\/script>';
 
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); } catch (e) {}
   }
@@ -401,25 +401,23 @@
 
   // ---------- Existing blocks ----------
   function loadList() {
-    fetch("https://api.github.com/repos/" + REPO + "/contents/blocks?ref=" + BRANCH)
+    fetch("../blocks/index.json", { cache: "no-store" })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (files) {
-        remoteNames = files.filter(function (f) { return /\.html$/.test(f.name); }).map(function (f) { return f.name.replace(/\.html$/, ""); });
+      .then(function (names) {
+        remoteNames = names;
         $("#existing").innerHTML = '<option value="">— choose —</option>' + remoteNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + "</option>"; }).join("");
         update();
       })
       .catch(function () {
         $("#existing").innerHTML = '<option value="">(could not load list)</option>';
         $("#loadStatus").className = "status warn";
-        $("#loadStatus").textContent = "Couldn't load the block list from GitHub (is blocks/ pushed?), so name clashes can't be checked.";
+        $("#loadStatus").textContent = "Couldn't load blocks/index.json (run `npm run dev` locally), so name clashes can't be checked.";
       });
   }
 
   function fetchBlock(name) {
-    var local = new URL("../blocks/" + name + ".html", location.href).href;
-    var raw = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/blocks/" + name + ".html";
-    var get = function (u) { return fetch(u, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }); };
-    return get(raw).catch(function () { return get(local); });
+    return fetch("../blocks/" + name + ".html", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); });
   }
 
   // ---------- Wiring ----------

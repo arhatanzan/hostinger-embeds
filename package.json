@@ -1,0 +1,9 @@
+{
+  "name": "hostinger-embeds",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-blocks-index.mjs",
+    "dev": "node scripts/build-blocks-index.mjs && netlify dev"
+  }
+}

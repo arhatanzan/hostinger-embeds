@@ -1,0 +1,4 @@
+node_modules/
+.netlify/
+public/blocks/index.json
+deno.lock

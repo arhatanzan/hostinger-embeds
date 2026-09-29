@@ -1,5 +1,5 @@
 // Usage: <div data-kb-block="research"></div>
-//        <script src="https://cdn.jsdelivr.net/gh/arhatanzan/hostinger-embeds@main/assets/js/blocks.js"></script>
+//        <script src="https://arhatembeds.netlify.app/assets/js/blocks.js"></script>
 // Loads blocks.css and fills each placeholder with blocks/<name>.html from the same origin/version as this script.
 (function () {
   var base = document.currentScript.src.split("?")[0].replace(/assets\/js\/[^/]+$/, "");
