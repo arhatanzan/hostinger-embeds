@@ -1,0 +1,154 @@
+<style>
+  @font-face {
+    font-family: 'Calibri';
+    src: local('Calibri'), local('Calibri Regular');
+  }
+
+  /* 12-column outer grid */
+  .page-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 !important;     /* kills builder padding */
+    margin-left: 0 !important; /* kills builder margins */
+    padding-left: 0 !important;/* kills wrapper padding */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+  /* Inner wrapper that spans columns 2..12 (10 columns wide) */
+  .content-10col {
+  grid-column: 2 / 12;
+  display: grid;
+  gap: 40px;
+  align-items: stretch;       /* <-- important */
+  padding: 18px 0;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;        /* <-- makes every row equal height */
+}
+
+  /* Breakpoints */
+  @media (min-width: 700px) {
+    .content-10col { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .content-10col { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* KEY: allow children to stretch so line can match content height */
+  .leadership-box {
+  display: flex;
+  gap: 18px;
+  align-items: stretch;       /* <-- stretches children to the full height */
+  height: 100%;
+}
+
+  /* GOLD LINE: no fixed min-height; stretch to parent */
+  .leadership-line {
+  border-left: 5px solid #d4a017 !important;
+  align-self: stretch;    /* <-- ensures it grows to full height */
+  height: auto;
+  flex-shrink: 0;
+  width: 0;
+}
+
+  /* make content a column container so height is determinable */
+  .leadership-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .leadership-content h3 {
+    font-family: Calibri, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #0a2342;
+    line-height: 1.3;
+  }
+
+  .leadership-content p {
+    font-family: Calibri, sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    margin: 0;
+    color: #0a2342;
+    line-height: 1.5;
+    text-align: justify;
+  }
+
+  /* Ensure on narrow screens the 10-col wrapper uses full width */
+  @media (max-width: 900px) {
+    .page-grid { padding: 12px; }
+    .content-10col { grid-column: 1 / -1; } /* full width on smaller screens */
+  }
+</style>
+
+<div class="page-grid">
+  <div class="content-10col">
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>Mental Health Ally</h3>
+        <p>
+          As a certified ally, I support colleagues navigating stress, emotional complexity, and workplace challenges. This role deepened my understanding of organizational psychology and the importance of empathetic leadership in high-pressure environments.
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>Wellbeing Champion</h3>
+        <p>
+          I partner with leaders to design wellbeing initiatives that uplift teams, encourage dialogue, and make mental health a shared responsibility. These efforts ensure that productivity is tied not to pressure, but to trust and support.
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>DEI Advocate & Support Group Member</h3>
+        <p>
+          Within my organization, I am an active voice for equity, representation, and belonging. I help create spaces where diverse identities feel valued and heard—reinforcing the idea that inclusive teams are stronger teams.
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>Team-Building Facilitator</h3>
+        <p>
+          I organize weekly Friday team-building activities that foster collaboration, creativity, and interpersonal bonding. These sessions strengthen group dynamics and build a workplace culture rooted in connection and shared success.
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>Ethics & Compliance</h3>
+        <p>
+          I organize bi-weekly Ethics & Compliance sessions in collaboration with our E&C team, helping strengthen organizational integrity and foster a culture of ethical decision-making.
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-box">
+      <div class="leadership-line"></div>
+      <div class="leadership-content">
+        <h3>Outreach Facilitator</h3>
+        <p>
+          I facilitate and coordinate CSR outreach events that enable the organization to give back meaningfully and create sustained community impact.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
