@@ -1,13 +1,13 @@
 [build]
   publish = "public"
-  command = "node scripts/build-blocks-index.mjs"
+  command = "node scripts/build.mjs"
 
 [dev]
   framework = "#static"
   publish = "public"
   port = 8888
 
-# Embeds on kaifabbas.com fetch() blocks cross-origin
+# Hostinger pages fetch() blocks and embeds cross-origin
 [[headers]]
   for = "/blocks/*"
   [headers.values]
@@ -24,6 +24,12 @@
     X-Robots-Tag = "noindex, nofollow"
     X-Frame-Options = "DENY"
     Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/embeds/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    X-Robots-Tag = "noindex, nofollow"
 
 [[redirects]]
   from = "/"

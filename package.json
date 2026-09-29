@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-blocks-index.mjs",
-    "dev": "node scripts/build-blocks-index.mjs && netlify dev"
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs && netlify dev"
   }
 }

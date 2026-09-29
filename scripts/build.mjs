@@ -1,4 +1,4 @@
-// Writes public/blocks/index.json (list of block names) for the admin builder.
+// Writes public/blocks/index.json (block names for the admin builder); git-ignored.
 import { readdirSync, writeFileSync } from "node:fs";
 
 const dir = new URL("../public/blocks/", import.meta.url);

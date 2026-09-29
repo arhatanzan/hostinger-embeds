@@ -421,7 +421,7 @@
     var live = SITE + "blocks/" + state.name + ".html";
     $("#live").href = live;
     $("#live").textContent = info.ok ? live : "(enter a valid name)";
-    $("#embed").textContent = '<div data-kb-block="' + (info.ok ? state.name : "…") + '"></div>\n<script src="' + SITE + 'assets/js/blocks.js"><\/script>';
+    $("#embed").textContent = '<script src="' + SITE + 'assets/js/embed.js" data-block="' + (info.ok ? state.name : "…") + '"><\/script>';
 
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); } catch (e) {}
   }
