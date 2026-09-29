@@ -1,0 +1,120 @@
+<!-- Bootstrap CSS for Responsive Design -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Load Unified Styles -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/arhatanzan/hostinger-embeds@main/assets/css/store-style.css">
+
+<!-- Generic HTML Container -->
+<div class="prod-wrap container" aria-live="polite">
+  <div class="prod-header row">
+    <div class="prod-title col-12">
+      <h1 id="pageH1">Blog</h1>
+      <div id="pageDesc" class="prod-sub">Insights, guides, and updates from the team</div>
+    </div>
+    <div class="prod-controls col-12" id="controls">
+      <div class="search w-100"><input id="searchInput" placeholder="Search posts..." /></div>
+      <div class="controls-row w-100">
+        <select id="categorySelect" class="select"><option value="">Categories</option></select>
+        <select id="filter2Select" class="select"><option value="">Dates</option></select>
+        <select id="filter3Select" class="select"><option value="">Read Time</option></select>
+        <select id="filter4Select" class="select"><option value="">Type</option></select>
+        <select id="filter5Select" class="select"><option value="">Price</option></select>
+        <select id="sortSelect" class="select">
+          <option value="new">Newest</option><option value="az">A &rarr; Z</option><option value="za">Z &rarr; A</option>
+        </select>
+        <select id="pageSizeSelect" class="select">
+          <option value="all">All</option>
+          <option value="4">4 per page</option>
+          <option value="8">8 per page</option>
+          <option value="12">12 per page</option>
+        </select>
+        <button id="resetBtn" class="btn">Reset</button>
+      </div>
+    </div>
+  </div>
+  <div id="grid" class="grid row"></div>
+  <div id="empty" class="empty" style="display: none">No posts found.</div>
+  <div id="pagination" class="pagination-wrap w-100" style="display: none"></div>
+</div>
+<button id="goTopBtn" aria-label="Go to top">↑ Top</button>
+
+<!-- Configure the Logic for Blog Posts -->
+<script>
+  window.APP_CONFIG = {
+    pageKey: "blog",    // Matches the key in admin-config.js
+
+    // filter2Select — full "Month YYYY" date value used for filtering
+    getFilter2Value: (p) => (p["date"] || "").toString().trim(),
+
+    // Groups the Dates dropdown by year (optgroup), with months listed inside each group
+    filter2GroupBy: (v) => { const m = v.match(/\b((?:19|20)\d{2})\b/); return m ? m[1] : ""; },
+
+    // filter3Select — read-time buckets; thresholds set in admin-config.js > blog.readTimeBuckets
+    getFilter3Value: (p) => {
+      const mins = parseInt((p["readMinutes"] || "").toString(), 10);
+      if (isNaN(mins)) return "";
+      const buckets = (window.ADMIN_CONFIG && window.ADMIN_CONFIG.blog && window.ADMIN_CONFIG.blog.readTimeBuckets) || {};
+      const shortMax  = buckets.shortMax  ?? 5;
+      const mediumMax = buckets.mediumMax ?? 10;
+      if (mins <= shortMax)  return "short";
+      if (mins <= mediumMax) return "medium";
+      return "long";
+    },
+
+    // filter4Select — type column (external / internal)
+    getFilter4Value: (p) => (p.type || "").toString().trim().toLowerCase(),
+
+    // filter5Select — price column (free / paid)
+    getFilter5Value: (p) => (p.price || "").toString().trim().toLowerCase(),
+
+    // Tags shown on the card front: read time + free/paid badge (from price column)
+    renderTags: (p) => {
+      const mins = (p["readMinutes"] || "").toString().trim();
+      const price = (p.price || "").toString().trim().toLowerCase();
+      let html = "";
+      if (mins) html += `<span class="tag blog-read-time">${mins} min</span>`;
+      if (price === "free")  html += `<span class="label-free">FREE</span>`;
+      if (price === "paid")  html += `<span class="label-paid">PAID</span>`;
+      return html;
+    },
+
+    // Publish date shown below the tags
+    renderMetadata: (p) => {
+      const date = (p["date"] || "").toString().trim();
+      return date ? `<div class="blog-date">${date}</div>` : "";
+    },
+
+    // "Read Post" CTA — uses the "articleUrl" column
+    // Hostinger URLs are always internal (_top). External URLs open in _blank with platform name.
+    renderPrimaryAction: (p) => {
+      const href = (p.productUrl || "#").toString().trim();
+      const utils = window.SWOOP_UTILS;
+      const internal = utils.isInternal(href);
+      if (internal) {
+        return `<a class="download-btn" href="${href}" target="_top">Read Post</a>`;
+      }
+      const platform = utils.getPlatformName(href);
+      const label = platform ? `Read on ${platform}` : "Read Post";
+      return `<a class="download-btn" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    }
+  };
+</script>
+<!-- Admin config must load before store-logic -->
+<script src="https://cdn.jsdelivr.net/gh/arhatanzan/hostinger-embeds@main/assets/js/admin-config.js"></script>
+<!-- Load Unified Logic -->
+<script src="https://cdn.jsdelivr.net/gh/arhatanzan/hostinger-embeds@main/assets/js/store-logic.js"></script>
+
+<style>
+  /* Blog-specific tag overrides */
+  .blog-date {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .blog-read-time {
+    background-color: var(--navy);
+    color: var(--page-bg);
+    border-color: var(--navy);
+  }
+</style>

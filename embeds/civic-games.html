@@ -1,0 +1,252 @@
+<section style="padding: 0; margin: 0;">
+  <iframe
+    id="gameFrame"
+    title="Civic game"
+    style="width:100%;border:0;display:block;overflow:hidden;"
+    scrolling="no"
+  ></iframe>
+</section>
+
+<!-- Provides the Games sheet id (same source as the lab embed and carousel) -->
+<script src="https://cdn.jsdelivr.net/gh/arhatanzan/hostinger-embeds@main/assets/js/admin-config.js"></script>
+
+<script>
+  (function () {
+    var GAMES_ORIGIN = "https://democracylab.netlify.app";
+    var SITE_URL = "https://kaifabbas.com";
+    var PAGE_PATH = "/civic-games";
+    var SITE_NAME = "Civic Games";
+    var FALLBACK_GAME = "game-civic-feed";
+    var SLUG_RE = /^game-[a-z0-9-]+$/;
+
+    // Filled from the Games sheet (rows with flag = 1); keyed by slug derived from productUrl
+    var GAMES = null;
+    var ORDER = [];
+
+    // Accepts "game-news-desk", "news-desk", "Game_News_Desk.html", "/game/the-news-desk", etc.
+    function normalize(value) {
+      if (!value) return null;
+      var v = String(value).trim().toLowerCase()
+        .replace(/^game=/, "")
+        .replace(/\/+$/, "")
+        .split("/").pop()
+        .replace(/\.html?$/, "")
+        .replace(/[_\s]+/g, "-")
+        .replace(/^the-/, "");
+      if (v.indexOf("game-") !== 0) v = "game-" + v;
+      if (!SLUG_RE.test(v)) return null;
+      // Until the sheet loads, any well-formed slug is allowed (the iframe origin/path is fixed)
+      return !GAMES || GAMES[v] ? v : null;
+    }
+
+    function defaultGame() {
+      return ORDER.length ? ORDER[0] : FALLBACK_GAME;
+    }
+
+    function loadGamesFromSheet() {
+      var cfg = window.ADMIN_CONFIG && window.ADMIN_CONFIG.lab;
+      if (!cfg) return Promise.reject(new Error("Games sheet not configured"));
+      var url = "https://docs.google.com/spreadsheets/d/" + encodeURIComponent(cfg.sheetId) +
+        "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(cfg.sheetName);
+      return fetch(url).then(function (r) {
+        if (!r.ok) throw new Error("Failed to load games sheet");
+        return r.text();
+      }).then(function (text) {
+        var data = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+        var cols = data.table.cols.map(function (c) { return (c.label || "").trim().toLowerCase(); });
+        var games = {};
+        var order = [];
+        data.table.rows.forEach(function (row) {
+          var item = {};
+          cols.forEach(function (col, i) {
+            var cell = row.c[i];
+            if (col) item[col] = cell ? (cell.f != null ? cell.f : cell.v) : "";
+          });
+          if (String(item.flag).trim() !== "1") return;
+          var raw = String(item.producturl || "").trim().toLowerCase()
+            .replace(/\/+$/, "").split("/").pop().replace(/\.html?$/, "");
+          if (!SLUG_RE.test(raw) || games[raw]) return;
+          games[raw] = {
+            title: String(item.title || "").trim(),
+            summary: String(item.summary || "").trim(),
+            image: String(item.imageurl || "").trim(),
+            category: String(item.category || "").trim()
+          };
+          order.push(raw);
+        });
+        if (!order.length) throw new Error("No active games in sheet");
+        GAMES = games;
+        ORDER = order;
+      });
+    }
+
+    // Supports ?game=x, bare ?game-x, and #x / #game=x
+    function fromLocation(loc) {
+      if (!loc) return null;
+      var params = new URLSearchParams(loc.search || "");
+      var candidates = [params.get("game")];
+      params.forEach(function (val, key) { if (!val) candidates.push(key); });
+      candidates.push((loc.hash || "").replace(/^#/, ""));
+      for (var i = 0; i < candidates.length; i++) {
+        var game = normalize(candidates[i]);
+        if (game) return game;
+      }
+      return null;
+    }
+
+    // Hostinger renders embeds as srcdoc iframes: same-origin on the live site, sandboxed in the builder preview
+    var topWin = null;
+    try { if (window.top.location.href) topWin = window.top; } catch (e) {}
+
+    function getGame() {
+      var game = topWin ? fromLocation(topWin.location) : null;
+      if (!game) game = fromLocation(window.location);
+      if (!game && document.referrer) {
+        try { game = fromLocation(new URL(document.referrer)); } catch (e) {}
+      }
+      return game || defaultGame();
+    }
+
+    var frame = document.getElementById("gameFrame");
+    var current = null;
+
+    function load(game) {
+      if (game === current) return;
+      current = game;
+      // host=civic-games tells the carousel to switch games via postMessage instead of reloading the page
+      frame.src = GAMES_ORIGIN + "/games/" + game + ".html?host=civic-games";
+      updateSeo(game);
+    }
+
+    // --- SEO: per-game title, description, canonical, Open Graph/Twitter and JSON-LD on the host page ---
+    var topDoc = null;
+    try { topDoc = window.top.document; } catch (e) {}
+
+    function setMeta(attr, key, content) {
+      if (!topDoc || !content) return;
+      var el = topDoc.head.querySelector("meta[" + attr + '="' + key + '"]');
+      if (!el) {
+        el = topDoc.createElement("meta");
+        el.setAttribute(attr, key);
+        topDoc.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    }
+
+    function setCanonical(href) {
+      if (!topDoc) return;
+      var el = topDoc.head.querySelector('link[rel="canonical"]');
+      if (!el) {
+        el = topDoc.createElement("link");
+        el.setAttribute("rel", "canonical");
+        topDoc.head.appendChild(el);
+      }
+      el.setAttribute("href", href);
+    }
+
+    function setJsonLd(obj) {
+      if (!topDoc) return;
+      var el = topDoc.getElementById("civic-game-jsonld");
+      if (!el) {
+        el = topDoc.createElement("script");
+        el.type = "application/ld+json";
+        el.id = "civic-game-jsonld";
+        topDoc.head.appendChild(el);
+      }
+      el.textContent = JSON.stringify(obj);
+    }
+
+    function updateSeo(game) {
+      var info = GAMES && GAMES[game];
+      if (!info) return;
+      var url = SITE_URL + PAGE_PATH + "?game=" + game;
+      var title = info.title ? info.title + " | " + SITE_NAME : SITE_NAME;
+
+      frame.title = info.title || "Civic game";
+      if (topDoc) topDoc.title = title;
+      setCanonical(url);
+      setMeta("name", "description", info.summary);
+      setMeta("property", "og:type", "website");
+      setMeta("property", "og:title", title);
+      setMeta("property", "og:description", info.summary);
+      setMeta("property", "og:url", url);
+      setMeta("property", "og:image", info.image);
+      setMeta("name", "twitter:card", "summary");
+      setMeta("name", "twitter:title", title);
+      setMeta("name", "twitter:description", info.summary);
+      setMeta("name", "twitter:image", info.image);
+      setJsonLd({
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": info.title,
+        "description": info.summary,
+        "url": url,
+        "image": info.image || undefined,
+        "genre": info.category || undefined,
+        "gamePlatform": "Web browser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "isAccessibleForFree": true,
+        "inLanguage": "en"
+      });
+    }
+
+    // Rewrites the address bar to the canonical ?game=<slug> form without adding a history entry
+    function canonicalizeTopUrl(game) {
+      if (!topWin) return;
+      try {
+        var url = new URL(topWin.location.href);
+        var target = "?game=" + game;
+        if (url.search === target && !url.hash) return;
+        url.search = target;
+        url.hash = "";
+        topWin.history.replaceState({ civicGame: game }, "", url.toString());
+      } catch (e) {}
+    }
+
+    function updateTopUrl(game) {
+      if (!topWin) return;
+      try {
+        var url = new URL(topWin.location.href);
+        url.search = "?game=" + game;
+        url.hash = "";
+        topWin.history.pushState({ civicGame: game }, "", url.toString());
+      } catch (e) {}
+    }
+
+    function scrollToGame() {
+      try { (window.frameElement || frame).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+    }
+
+    load(getGame());
+
+    // Once the sheet arrives, enforce the whitelist, apply SEO tags and tidy the URL
+    loadGamesFromSheet().then(function () {
+      var game = getGame();
+      if (game !== current) load(game); else updateSeo(game);
+      var hadParam = false;
+      try { hadParam = !!(topWin && (topWin.location.search || topWin.location.hash)); } catch (e) {}
+      if (hadParam) canonicalizeTopUrl(game);
+    }).catch(function (err) {
+      console.error("Civic games:", err);
+    });
+
+    window.addEventListener("message", function (event) {
+      if (event.origin !== GAMES_ORIGIN || !event.data) return;
+      if (event.data.type === "resizeIframe") {
+        frame.style.height = event.data.height + "px";
+      } else if (event.data.type === "selectGame") {
+        var game = normalize(event.data.game);
+        if (!game || game === current) return;
+        load(game);
+        updateTopUrl(game);
+        scrollToGame();
+      }
+    });
+
+    // Browser back/forward between games
+    if (topWin) {
+      topWin.addEventListener("popstate", function () { load(getGame()); });
+    }
+  })();
+</script>
