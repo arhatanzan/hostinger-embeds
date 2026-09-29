@@ -21,7 +21,7 @@
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .row > .grow { flex: 1; }
   .check { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; margin: 6px 14px 0 0; }
-  button, .btn { font: inherit; padding: 7px 12px; border-radius: 5px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-decoration: none; color: inherit; display: inline-block; }
+  button, .btn { font: inherit; padding: 7px 12px; border-radius: 5px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-decoration: none; color: #1d2733; display: inline-block; }
   button:hover, .btn:hover { border-color: #9aa3ae; }
   .primary { background: var(--gold) !important; border-color: var(--gold) !important; color: var(--navy) !important; font-weight: 700; }
   .is-disabled, button:disabled { opacity: .45; pointer-events: none; }
@@ -172,10 +172,18 @@
       .replace(/\*(.+?)\*/g, "<em>$1</em>");
   }
   function safeUrl(u) {
+    var s = String(u || "").trim();
+    if (!s) return "";
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = "https://" + s.replace(/^\/+/, "");
     try {
-      var url = new URL(String(u).trim());
-      return /^https?:$/.test(url.protocol) ? url.href : "";
+      var url = new URL(s);
+      return /^https?:$/.test(url.protocol) && url.hostname.indexOf(".") !== -1 ? url.href : "";
     } catch (e) { return ""; }
+  }
+  function citeStatus(it) {
+    if (!it.citeUrl.trim()) return it.citeText.trim() ? { cls: "warn", msg: "Add a URL, or the citation won't be shown." } : { cls: "", msg: "" };
+    if (!safeUrl(it.citeUrl)) return { cls: "err", msg: "Not a valid web address, so the citation won't be shown." };
+    return { cls: "ok", msg: "Links to " + safeUrl(it.citeUrl) };
   }
   function indent(str, n) {
     var pad = new Array(n + 1).join(" ");
@@ -211,8 +219,9 @@
     if (L !== "cards" && it.subtitle.trim()) parts.push("<h4>" + inline(it.subtitle) + "</h4>");
     parts = parts.concat(bodyBlocks(it.body));
     var url = safeUrl(it.citeUrl);
-    if (L !== "cards" && url && it.citeText.trim()) {
-      parts.push('<p class="kb-citation"><em>Citation: <a href="' + esc(url) + '" target="_blank" rel="noopener">' + inline(it.citeText) + "</a></em></p>");
+    if (L !== "cards" && url) {
+      var label = it.citeText.trim() ? inline(it.citeText) : esc(new URL(url).hostname.replace(/^www\./, ""));
+      parts.push('<p class="kb-citation"><em>Citation: <a href="' + esc(url) + '" target="_blank" rel="noopener">' + label + "</a></em></p>");
     }
     var cls = L === "cards" ? "kb-card" : LAYOUTS[L].item;
     return '<div class="' + cls + '">\n' + indent(parts.join("\n"), 2) + "\n</div>";
@@ -302,7 +311,7 @@
       case "subtitle": return '<label>Sub-heading <span class="hint">(optional)</span></label><input type="text" data-f="subtitle">';
       case "short": return '<label>Label</label><input type="text" data-f="body">';
       case "body": return '<label>Text</label><textarea data-f="body"></textarea>';
-      case "cite": return '<label>Citation <span class="hint">(optional)</span></label><div class="row"><input type="text" class="grow" data-f="citeText" placeholder="Link text"><input type="url" class="grow" data-f="citeUrl" placeholder="https://…"></div>';
+      case "cite": return '<label>Citation <span class="hint">(optional)</span></label><div class="row"><input type="text" class="grow" data-f="citeText" placeholder="Link text"><input type="text" inputmode="url" class="grow" data-f="citeUrl" placeholder="https://…"></div><div class="status" data-cite-status></div>';
     }
     return "";
   }
@@ -321,8 +330,34 @@
         '<button type="button" data-act="del">Remove</button></span></div>' +
         LAYOUTS[L].fields.map(function (f) { return fieldHtml(f, L); }).join("");
       d.querySelectorAll("[data-f]").forEach(function (inp) { inp.value = it[inp.dataset.f] || ""; });
+      showCiteStatus(d, it);
       box.appendChild(d);
     });
+  }
+
+  function showCiteStatus(itemEl, it) {
+    var el = itemEl.querySelector("[data-cite-status]");
+    if (!el) return;
+    var s = citeStatus(it);
+    el.className = "status " + s.cls;
+    el.textContent = s.msg;
+  }
+
+  // Two-click confirm; native confirm() is silently blocked in some browsers.
+  function confirmClick(btn, action) {
+    if (btn.dataset.armed) {
+      clearTimeout(+btn.dataset.armed);
+      delete btn.dataset.armed;
+      btn.textContent = btn.dataset.label;
+      action();
+      return;
+    }
+    btn.dataset.label = btn.textContent;
+    btn.textContent = "Click again to confirm";
+    btn.dataset.armed = setTimeout(function () {
+      delete btn.dataset.armed;
+      btn.textContent = btn.dataset.label;
+    }, 3000);
   }
 
   function renderControls() {
@@ -442,7 +477,9 @@
   $("#items").addEventListener("input", function (e) {
     var f = e.target.dataset.f;
     if (!f) return;
-    state.items[+e.target.closest(".item").dataset.i][f] = e.target.value;
+    var itemEl = e.target.closest(".item"), it = state.items[+itemEl.dataset.i];
+    it[f] = e.target.value;
+    if (f === "citeUrl" || f === "citeText") showCiteStatus(itemEl, it);
     update();
   });
   $("#items").addEventListener("click", function (e) {
@@ -452,17 +489,27 @@
     if (act === "up" && i > 0) items.splice(i - 1, 0, items.splice(i, 1)[0]);
     if (act === "down" && i < items.length - 1) items.splice(i + 1, 0, items.splice(i, 1)[0]);
     if (act === "dup") items.splice(i + 1, 0, JSON.parse(JSON.stringify(items[i])));
-    if (act === "del" && (items.length > 1 || confirm("Remove the last item?"))) { items.splice(i, 1); if (!items.length) items.push(blankItem()); }
+    if (act === "del") {
+      return confirmClick(e.target, function () {
+        items.splice(i, 1);
+        if (!items.length) items.push(blankItem());
+        renderItems();
+        update();
+      });
+    }
     renderItems();
     update();
   });
   $("#addItem").addEventListener("click", function () { state.items.push(blankItem()); renderItems(); update(); });
 
-  $("#newBtn").addEventListener("click", function () {
-    if (!confirm("Start a new block? The current draft will be cleared.")) return;
-    state = blankState();
-    renderControls();
-    update();
+  $("#newBtn").addEventListener("click", function (e) {
+    confirmClick(e.target, function () {
+      state = blankState();
+      $("#existing").value = "";
+      $("#loadStatus").textContent = "";
+      renderControls();
+      update();
+    });
   });
 
   $("#loadBtn").addEventListener("click", function () {
