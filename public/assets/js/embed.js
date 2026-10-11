@@ -13,6 +13,49 @@
     return;
   }
 
+  var hostFrame = window.frameElement;
+  var hostWindow = null;
+  var originalFrameStyles = null;
+  var frameStyleProperties = ["width", "max-width", "position", "left", "transform", "box-sizing"];
+
+  function fitHostFrame() {
+    if (!hostFrame) return;
+    try {
+      var viewportWidth = hostFrame.ownerDocument.documentElement.clientWidth;
+      if (viewportWidth > 0 && viewportWidth <= 768) {
+        if (!originalFrameStyles) {
+          originalFrameStyles = {};
+          frameStyleProperties.forEach(function (property) {
+            originalFrameStyles[property] = {
+              value: hostFrame.style.getPropertyValue(property),
+              priority: hostFrame.style.getPropertyPriority(property)
+            };
+          });
+        }
+        hostFrame.style.width = viewportWidth + "px";
+        hostFrame.style.maxWidth = viewportWidth + "px";
+        hostFrame.style.position = "relative";
+        hostFrame.style.left = "50%";
+        hostFrame.style.transform = "translateX(-50%)";
+        hostFrame.style.boxSizing = "border-box";
+      } else if (originalFrameStyles) {
+        frameStyleProperties.forEach(function (property) {
+          var original = originalFrameStyles[property];
+          if (original.value) hostFrame.style.setProperty(property, original.value, original.priority);
+          else hostFrame.style.removeProperty(property);
+        });
+      }
+      hostWindow = hostFrame.ownerDocument.defaultView;
+    } catch (e) {}
+  }
+
+  fitHostFrame();
+  window.addEventListener("resize", fitHostFrame);
+  try {
+    hostWindow = hostFrame && hostFrame.ownerDocument.defaultView;
+    if (hostWindow) hostWindow.addEventListener("resize", fitHostFrame);
+  } catch (e) {}
+
   var host = document.createElement("div");
   host.style.opacity = "0";
   host.style.transition = "opacity .15s ease";
