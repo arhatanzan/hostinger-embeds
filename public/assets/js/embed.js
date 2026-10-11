@@ -53,19 +53,21 @@
           originalFrameStyles = captureStyles(hostFrame, frameStyleProperties);
           originalContainerStyles = captureStyles(hostContainer, containerStyleProperties);
           originalLayoutStyles = captureStyles(hostLayout, ["--m-grid-row"]);
-          originalBlockStyles = captureStyles(hostBlock, ["--m-grid-template-rows"]);
+          originalBlockStyles = captureStyles(hostBlock, ["--m-grid-template-rows", "--m-block-min-height", "--t-block-min-height"]);
         }
 
         restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
         restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
         restoreStyles(hostLayout, originalLayoutStyles, ["--m-grid-row"]);
-        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows"]);
+        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows", "--m-block-min-height", "--t-block-min-height"]);
         var containerLeft = hostContainer.getBoundingClientRect().left;
         hostContainer.style.width = viewportWidth + "px";
         hostContainer.style.maxWidth = viewportWidth + "px";
         hostContainer.style.marginLeft = -containerLeft + "px";
         hostLayout.style.setProperty("--m-grid-row", "1/2");
         hostBlock.style.setProperty("--m-grid-template-rows", "0px auto 0px");
+        hostBlock.style.setProperty("--m-block-min-height", "auto");
+        hostBlock.style.setProperty("--t-block-min-height", "auto");
         hostFrame.style.width = "100%";
         hostFrame.style.maxWidth = "100%";
         hostFrame.style.position = "static";
@@ -76,7 +78,7 @@
         restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
         restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
         restoreStyles(hostLayout, originalLayoutStyles, ["--m-grid-row"]);
-        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows"]);
+        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows", "--m-block-min-height", "--t-block-min-height"]);
         originalFrameStyles = null;
         originalContainerStyles = null;
         originalLayoutStyles = null;
