@@ -14,43 +14,65 @@
   }
 
   var hostFrame = window.frameElement;
+  var hostContainer = hostFrame && hostFrame.parentElement;
   var hostWindow = null;
   var originalFrameStyles = null;
+  var originalContainerStyles = null;
   var frameStyleProperties = ["width", "max-width", "position", "left", "transform", "box-sizing"];
+  var containerStyleProperties = ["width", "max-width", "margin-left"];
+
+  function captureStyles(element, properties) {
+    var styles = {};
+    properties.forEach(function (property) {
+      styles[property] = {
+        value: element.style.getPropertyValue(property),
+        priority: element.style.getPropertyPriority(property)
+      };
+    });
+    return styles;
+  }
+
+  function restoreStyles(element, styles, properties) {
+    properties.forEach(function (property) {
+      var original = styles[property];
+      if (original.value) element.style.setProperty(property, original.value, original.priority);
+      else element.style.removeProperty(property);
+    });
+  }
 
   function fitHostFrame() {
-    if (!hostFrame) return;
+    if (!hostFrame || !hostContainer) return;
     try {
       var viewportWidth = hostFrame.ownerDocument.documentElement.clientWidth;
       if (viewportWidth > 0 && viewportWidth <= 768) {
         if (!originalFrameStyles) {
-          originalFrameStyles = {};
-          frameStyleProperties.forEach(function (property) {
-            originalFrameStyles[property] = {
-              value: hostFrame.style.getPropertyValue(property),
-              priority: hostFrame.style.getPropertyPriority(property)
-            };
-          });
+          originalFrameStyles = captureStyles(hostFrame, frameStyleProperties);
+          originalContainerStyles = captureStyles(hostContainer, containerStyleProperties);
         }
-        hostFrame.style.width = viewportWidth + "px";
-        hostFrame.style.maxWidth = viewportWidth + "px";
-        hostFrame.style.position = "relative";
-        hostFrame.style.left = "50%";
-        hostFrame.style.transform = "translateX(-50%)";
+
+        restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
+        restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
+        var containerLeft = hostContainer.getBoundingClientRect().left;
+        hostContainer.style.width = viewportWidth + "px";
+        hostContainer.style.maxWidth = viewportWidth + "px";
+        hostContainer.style.marginLeft = -containerLeft + "px";
+        hostFrame.style.width = "100%";
+        hostFrame.style.maxWidth = "100%";
+        hostFrame.style.position = "static";
+        hostFrame.style.left = "auto";
+        hostFrame.style.transform = "none";
         hostFrame.style.boxSizing = "border-box";
       } else if (originalFrameStyles) {
-        frameStyleProperties.forEach(function (property) {
-          var original = originalFrameStyles[property];
-          if (original.value) hostFrame.style.setProperty(property, original.value, original.priority);
-          else hostFrame.style.removeProperty(property);
-        });
+        restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
+        restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
+        originalFrameStyles = null;
+        originalContainerStyles = null;
       }
       hostWindow = hostFrame.ownerDocument.defaultView;
     } catch (e) {}
   }
 
   fitHostFrame();
-  window.addEventListener("resize", fitHostFrame);
   try {
     hostWindow = hostFrame && hostFrame.ownerDocument.defaultView;
     if (hostWindow) hostWindow.addEventListener("resize", fitHostFrame);
