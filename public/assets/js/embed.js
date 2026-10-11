@@ -15,9 +15,13 @@
 
   var hostFrame = window.frameElement;
   var hostContainer = hostFrame && hostFrame.parentElement;
+  var hostLayout = hostContainer && hostContainer.parentElement;
+  var hostBlock = hostLayout && hostLayout.parentElement;
   var hostWindow = null;
   var originalFrameStyles = null;
   var originalContainerStyles = null;
+  var originalLayoutStyles = null;
+  var originalBlockStyles = null;
   var frameStyleProperties = ["width", "max-width", "position", "left", "transform", "box-sizing"];
   var containerStyleProperties = ["width", "max-width", "margin-left"];
 
@@ -41,21 +45,27 @@
   }
 
   function fitHostFrame() {
-    if (!hostFrame || !hostContainer) return;
+    if (!hostFrame || !hostContainer || !hostLayout || !hostBlock) return;
     try {
       var viewportWidth = hostFrame.ownerDocument.documentElement.clientWidth;
       if (viewportWidth > 0 && viewportWidth <= 768) {
         if (!originalFrameStyles) {
           originalFrameStyles = captureStyles(hostFrame, frameStyleProperties);
           originalContainerStyles = captureStyles(hostContainer, containerStyleProperties);
+          originalLayoutStyles = captureStyles(hostLayout, ["--m-grid-row"]);
+          originalBlockStyles = captureStyles(hostBlock, ["--m-grid-template-rows"]);
         }
 
         restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
         restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
+        restoreStyles(hostLayout, originalLayoutStyles, ["--m-grid-row"]);
+        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows"]);
         var containerLeft = hostContainer.getBoundingClientRect().left;
         hostContainer.style.width = viewportWidth + "px";
         hostContainer.style.maxWidth = viewportWidth + "px";
         hostContainer.style.marginLeft = -containerLeft + "px";
+        hostLayout.style.setProperty("--m-grid-row", "1/2");
+        hostBlock.style.setProperty("--m-grid-template-rows", "0px auto 0px");
         hostFrame.style.width = "100%";
         hostFrame.style.maxWidth = "100%";
         hostFrame.style.position = "static";
@@ -65,8 +75,12 @@
       } else if (originalFrameStyles) {
         restoreStyles(hostFrame, originalFrameStyles, frameStyleProperties);
         restoreStyles(hostContainer, originalContainerStyles, containerStyleProperties);
+        restoreStyles(hostLayout, originalLayoutStyles, ["--m-grid-row"]);
+        restoreStyles(hostBlock, originalBlockStyles, ["--m-grid-template-rows"]);
         originalFrameStyles = null;
         originalContainerStyles = null;
+        originalLayoutStyles = null;
+        originalBlockStyles = null;
       }
       hostWindow = hostFrame.ownerDocument.defaultView;
     } catch (e) {}
