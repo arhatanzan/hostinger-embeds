@@ -176,6 +176,12 @@
     .then(function (html) {
       var template = document.createElement("template");
       template.innerHTML = html;
+      // Netlify's injected page toolbar is not part of the content fragment.
+      template.content.querySelectorAll('script[data-netlify-site-id][src]').forEach(function (script) {
+        if (new URL(script.getAttribute("src"), contentUrl).pathname === "/.netlify/scripts/hud") {
+          script.remove();
+        }
+      });
       // Resolve template assets against Netlify, not the embedding Hostinger page.
       template.content.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (asset) {
         var attribute = asset.tagName === "SCRIPT" ? "src" : "href";

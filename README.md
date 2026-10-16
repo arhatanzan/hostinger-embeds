@@ -16,6 +16,10 @@ Every Hostinger "Embed code" element holds a single line. Content, styles and sc
 | Any content block | `<script src="https://arhatembeds.netlify.app/assets/js/embed.js" data-block="research"></script>` |
 
 `embed.js` fetches `/embeds/<name>.html` or `/blocks/<name>.html`, inserts it where the tag is, and runs its scripts in order. Hostinger resizes the element to the content automatically.
+Netlify's edge-injected badge/toolbar script is excluded from fetched fragments;
+it is page chrome, not embed content. To disable the badge on direct Netlify
+previews too, turn off **Project configuration > General > Powered by Netlify badge**
+in the Netlify dashboard (no redeploy needed).
 
 ## Structure
 
@@ -25,8 +29,9 @@ Every Hostinger "Embed code" element holds a single line. Content, styles and sc
   - `lab.html`: games grid; cards link to `/civic-games?game=<slug>`.
   - `civic-games.html`: the `/civic-games` page; loads the selected game from `democracylab.netlify.app`.
   - `meet.html`: responsive full-width frame for the Meet page, with camera/microphone access delegated to the embedded page.
-    Uses a 900px frame (1100px at widths up to 640px) rather than `100vh`,
-    which would depend on Hostinger's own auto-sized embed frame. The Contact
+    Uses width-based heights capped at 720px on desktop, with taller heights
+    below Linklee's 640px mobile breakpoint, rather than `100vh`, which would depend on Hostinger's
+    own auto-sized embed frame. The Contact
     page scrolls normally; the booking frame has room for the calendar without
     nested scrollbars. Linklee is cross-origin and does not currently publish
     content-height messages, so recheck these heights when its layout changes.
