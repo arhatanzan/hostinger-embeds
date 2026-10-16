@@ -2,10 +2,10 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <!-- Load Unified Styles -->
-<link rel="stylesheet" href="https://arhatembeds.netlify.app/assets/css/store-style.css">
+<link rel="stylesheet" href="../assets/css/store-style.css">
 
 <!-- Generic HTML Container -->
-<div class="prod-wrap container" aria-live="polite">
+<div class="prod-wrap blog-wrap container" aria-live="polite">
   <div class="prod-header row">
     <div class="prod-title col-12">
       <h1 id="pageH1">Blog</h1>
@@ -15,7 +15,8 @@
       <div class="search w-100"><input id="searchInput" placeholder="Search posts..." /></div>
       <div class="controls-row w-100">
         <select id="categorySelect" class="select"><option value="">Categories</option></select>
-        <select id="filter2Select" class="select"><option value="">Dates</option></select>
+        <select id="yearSelect" class="select" aria-label="Filter by year" disabled><option value="">All years</option></select>
+        <select id="filter2Select" class="select" aria-label="Filter by month" disabled><option value="">Select year first</option></select>
         <select id="filter3Select" class="select"><option value="">Read Time</option></select>
         <select id="filter4Select" class="select"><option value="">Type</option></select>
         <select id="filter5Select" class="select"><option value="">Price</option></select>
@@ -43,10 +44,11 @@
   window.APP_CONFIG = {
     pageKey: "blog",    // Matches the key in admin-config.js
 
-    // filter2Select — full "Month YYYY" date value used for filtering
-    getFilter2Value: (p) => (p["date"] || "").toString().trim(),
+    // Use the underlying Sheet date, independent of its display format.
+    getFilter2Value: (p) => (p.dateFilterValue || p.date || "").toString().trim()
+      .replace(/^([a-z]{3})[a-z]*[.,]?\s+((?:19|20)\d{2})$/i, (_, month, year) => `${month.toLowerCase()} ${year}`),
 
-    // Groups the Dates dropdown by year (optgroup), with months listed inside each group
+    // Groups dates for the Year and Month filters.
     filter2GroupBy: (v) => { const m = v.match(/\b((?:19|20)\d{2})\b/); return m ? m[1] : ""; },
 
     // filter3Select — read-time buckets; thresholds set in admin-config.js > blog.readTimeBuckets
@@ -100,11 +102,16 @@
   };
 </script>
 <!-- Admin config must load before store-logic -->
-<script src="https://arhatembeds.netlify.app/assets/js/admin-config.js"></script>
+<script src="../assets/js/admin-config.js"></script>
 <!-- Load Unified Logic -->
-<script src="https://arhatembeds.netlify.app/assets/js/store-logic.js"></script>
+<script src="../assets/js/store-logic.js"></script>
 
 <style>
+  .prod-wrap.blog-wrap {
+    margin-top: 0;
+    padding-top: 12px;
+  }
+
   /* Blog-specific tag overrides */
   .blog-date {
     font-size: 12px;

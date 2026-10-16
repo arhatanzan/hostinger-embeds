@@ -7,6 +7,7 @@
   var embed = me.getAttribute("data-embed");
   var block = me.getAttribute("data-block");
   var name = embed || block;
+  var contentUrl = base + (embed ? "embeds/" : "blocks/") + name + ".html";
 
   if (!name || !/^[a-z0-9_-]+$/.test(name)) {
     console.error("[embed] add data-embed=\"name\" or data-block=\"name\" to the script tag");
@@ -167,13 +168,20 @@
     return controller.signal;
   }
 
-  fetch(base + (embed ? "embeds/" : "blocks/") + name + ".html", { signal: timeoutSignal(20000) })
+  fetch(contentUrl, { signal: timeoutSignal(20000) })
     .then(function (res) {
       if (!res.ok) throw new Error(res.status);
       return res.text();
     })
     .then(function (html) {
-      host.innerHTML = html;
+      var template = document.createElement("template");
+      template.innerHTML = html;
+      // Resolve template assets against Netlify, not the embedding Hostinger page.
+      template.content.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (asset) {
+        var attribute = asset.tagName === "SCRIPT" ? "src" : "href";
+        asset.setAttribute(attribute, new URL(asset.getAttribute(attribute), contentUrl).href);
+      });
+      host.appendChild(template.content);
       pendingStyles = pendingStyles.concat(Array.prototype.slice.call(host.querySelectorAll('link[rel="stylesheet"]')));
       return waitForStyles(pendingStyles, 8000);
     })

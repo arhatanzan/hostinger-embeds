@@ -31,6 +31,7 @@ function initStore() {
     grid: document.getElementById("grid"),
     empty: document.getElementById("empty"),
     categorySelect: document.getElementById("categorySelect"),
+    yearSelect: document.getElementById("yearSelect"),
     filter2Select: document.getElementById("filter2Select"),
     filter3Select: document.getElementById("filter3Select"),
     filter4Select: document.getElementById("filter4Select"),
@@ -56,10 +57,14 @@ function initStore() {
 
   /* --- DATA FETCHING & STANDARDIZATION --- */
   fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=1&sheet=${sheetName}`)
-    .then(res => res.text())
+    .then(res => {
+      if (!res.ok) throw new Error(`Sheet request failed (${res.status})`);
+      return res.text();
+    })
     .then(text => {
       const json = JSON.parse(text.substring(47).slice(0, -2));
       const cols = json.table.cols.map(c => c.label ? c.label.trim() : "");
+      const dateColumnIndex = cols.findIndex(col => col.toLowerCase() === "date");
 
       // Converts Google Sheets Date(year, month0, day) values to "Month YYYY" strings
       const parseSheetValue = (cell) => {
@@ -97,6 +102,12 @@ function initStore() {
         obj.type = getK("type");
         obj.price = getK("price");
         obj.flag = getK("flag");
+        obj.date = getK("date");
+        obj.readMinutes = getK("readminutes");
+        const dateCell = row.c[dateColumnIndex];
+        obj.dateFilterValue = dateCell && /^Date\(/.test(dateCell.v)
+          ? parseSheetValue({ v: dateCell.v })
+          : obj.date;
 
         return obj;
       });
@@ -107,7 +118,13 @@ function initStore() {
       setupFilters();
       applyFilters();
     })
-    .catch(err => console.error("Data Fetch Error:", err));
+    .catch(err => {
+      console.error("Data Fetch Error:", err);
+      if (refs.empty) {
+        refs.empty.textContent = `Unable to load ${itemLabel}. Please refresh to try again.`;
+        refs.empty.style.display = "block";
+      }
+    });
 
   /* --- HELPERS --- */
   function escapeHtml(s) { return (s || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
@@ -275,6 +292,22 @@ function initStore() {
   }
 
   /* --- FILTERING & SORTING ENGINE --- */
+  const MONTH_ORDER = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  const dateGroups = new Map();
+
+  function updateMonthOptions() {
+    if (!refs.yearSelect || !refs.filter2Select) return;
+    refs.filter2Select.length = 1;
+    refs.filter2Select.value = "";
+    refs.filter2Select.options[0].textContent = refs.yearSelect.value ? "All months" : "Select year first";
+    const months = dateGroups.get(refs.yearSelect.value) || [];
+    months.forEach(v => {
+      const month = MONTH_ORDER.find(m => m.slice(0, 3) === v.slice(0, 3));
+      refs.filter2Select.appendChild(new Option(cap(month || v), v));
+    });
+    refs.filter2Select.disabled = !months.length;
+  }
+
   function setupFilters() {
     if (refs.categorySelect) {
       // Support comma-separated multi-category values
@@ -283,14 +316,28 @@ function initStore() {
     }
     if (refs.filter2Select) {
       const f2Vals = [...new Set(PRODUCTS.map(p => getFilter2Value(p).toLowerCase().trim()))].filter(Boolean);
-      if (filter2GroupBy) {
+      if (refs.yearSelect && filter2GroupBy) {
+        f2Vals.forEach(v => {
+          const year = filter2GroupBy(v) || "Other";
+          if (!dateGroups.has(year)) dateGroups.set(year, []);
+          dateGroups.get(year).push(v);
+        });
+        [...dateGroups.keys()].sort((a, b) => b.localeCompare(a, undefined, { numeric: true })).forEach(year => {
+          dateGroups.get(year).sort((a, b) =>
+            MONTH_ORDER.findIndex(m => m.slice(0, 3) === a.slice(0, 3)) -
+            MONTH_ORDER.findIndex(m => m.slice(0, 3) === b.slice(0, 3))
+          );
+          refs.yearSelect.appendChild(new Option(year, year));
+        });
+        refs.yearSelect.disabled = !dateGroups.size;
+        updateMonthOptions();
+      } else if (filter2GroupBy) {
         // Build year → months map
         const groups = {};
         f2Vals.forEach(v => {
           const g = filter2GroupBy(v) || "Other";
           (groups[g] = groups[g] || []).push(v);
         });
-        const MONTH_ORDER = ["january","february","march","april","may","june","july","august","september","october","november","december"];
         // Sort groups descending (newest year first)
         Object.keys(groups).sort((a, b) => b.localeCompare(a, undefined, { numeric: true })).forEach(g => {
           const optgroup = document.createElement("optgroup");
@@ -325,6 +372,7 @@ function initStore() {
     const q = refs.searchInput ? refs.searchInput.value.toLowerCase().trim() : "";
     const cat = refs.categorySelect ? refs.categorySelect.value : "";
     const filter2 = refs.filter2Select ? refs.filter2Select.value : "";
+    const year = refs.yearSelect ? refs.yearSelect.value : "";
     const sort = refs.sortSelect ? refs.sortSelect.value : "new";
 
     const filter3 = refs.filter3Select ? refs.filter3Select.value : "";
@@ -340,11 +388,14 @@ function initStore() {
           ? (filter2GroupBy ? filter2GroupBy(getFilter2Value(p).toLowerCase().trim()) === filter2.slice(8) : false)
           : getFilter2Value(p).toLowerCase().trim() === filter2
       );
+      const matchesYear = !year || (
+        filter2GroupBy && (filter2GroupBy(getFilter2Value(p).toLowerCase().trim()) || "Other") === year
+      );
       const m3 = !q || Object.values(p).join(" ").toLowerCase().includes(q);
       const m4 = !filter3 || !getFilter3Value || getFilter3Value(p).toLowerCase().trim() === filter3;
       const m5 = !filter4 || !getFilter4Value || getFilter4Value(p).toLowerCase().trim() === filter4;
       const m6 = !filter5 || !getFilter5Value || getFilter5Value(p).toLowerCase().trim() === filter5;
-      return m1 && m2 && m3 && m4 && m5 && m6;
+      return m1 && m2 && matchesYear && m3 && m4 && m5 && m6;
     });
 
     // The Bulletproof Sorting Logic
@@ -361,6 +412,10 @@ function initStore() {
   // Event Listeners for Filters
   if (refs.searchInput) refs.searchInput.addEventListener("input", debounce(applyFilters, 250));
   if (refs.categorySelect) refs.categorySelect.addEventListener("change", applyFilters);
+  if (refs.yearSelect) refs.yearSelect.addEventListener("change", () => {
+    updateMonthOptions();
+    applyFilters();
+  });
   if (refs.filter2Select) refs.filter2Select.addEventListener("change", applyFilters);
   if (refs.filter3Select) refs.filter3Select.addEventListener("change", applyFilters);
   if (refs.filter4Select) refs.filter4Select.addEventListener("change", applyFilters);
@@ -371,6 +426,10 @@ function initStore() {
   if (refs.resetBtn) refs.resetBtn.addEventListener("click", () => {
     if(refs.searchInput) refs.searchInput.value = "";
     if(refs.categorySelect) refs.categorySelect.value = "";
+    if(refs.yearSelect) {
+      refs.yearSelect.value = "";
+      updateMonthOptions();
+    }
     if(refs.filter2Select) refs.filter2Select.value = "";
     if(refs.filter3Select) refs.filter3Select.value = "";
     if(refs.filter4Select) refs.filter4Select.value = "";
