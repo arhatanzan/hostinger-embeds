@@ -25,6 +25,11 @@ Every Hostinger "Embed code" element holds a single line. Content, styles and sc
   - `lab.html`: games grid; cards link to `/civic-games?game=<slug>`.
   - `civic-games.html`: the `/civic-games` page; loads the selected game from `democracylab.netlify.app`.
   - `meet.html`: responsive full-width frame for the Meet page, with camera/microphone access delegated to the embedded page.
+    Uses a 900px frame (1100px at widths up to 640px) rather than `100vh`,
+    which would depend on Hostinger's own auto-sized embed frame. The Contact
+    page scrolls normally; the booking frame has room for the calendar without
+    nested scrollbars. Linklee is cross-origin and does not currently publish
+    content-height messages, so recheck these heights when its layout changes.
   - `product.html`, `blog.html`: products and blog grids.
     The blog date filter uses a newest-first Year dropdown and a Month dropdown
     limited to dates in the selected year. Leave Month at "All months" to show the
