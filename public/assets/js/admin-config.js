@@ -23,13 +23,15 @@
  *  └─────────────────┴─────────────────────────────────────────────────┘
  */
 
+const SHEET_ID = "__SHEET_ID__";
+
 window.ADMIN_CONFIG = {
 
   // ── Products embed ──────────────────────────────────────────
   products: {
     pageSize: "all",     // Show every product without pagination
     pageSizeOptions: ["all", 4, 8, 12, 24],
-    sheetId: "1UIpV8mZ21NTqJUWMbw5NK1V4cWFjuTbRUxpxlvOWljk",
+    sheetId: SHEET_ID,
     sheetName: "Products",
     itemLabel: "products"
   },
@@ -38,7 +40,7 @@ window.ADMIN_CONFIG = {
   lab: {
     pageSize: "8",       // Show 8 games per page
     pageSizeOptions: ["all", 4, 8, 12, 24],
-    sheetId: "1UIpV8mZ21NTqJUWMbw5NK1V4cWFjuTbRUxpxlvOWljk",
+    sheetId: SHEET_ID,
     sheetName: "Games",
     itemLabel: "games"
   },
@@ -47,7 +49,7 @@ window.ADMIN_CONFIG = {
   blog: {
     pageSize: "8",       // Show 8 posts per page
     pageSizeOptions: ["all", 4, 8, 12, 24],
-    sheetId: "1UIpV8mZ21NTqJUWMbw5NK1V4cWFjuTbRUxpxlvOWljk",
+    sheetId: SHEET_ID,
     sheetName: "Blogs",
     itemLabel: "blogs",
     // Read-time buckets: posts with readMinutes <= shortMax are "Short",

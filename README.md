@@ -54,7 +54,7 @@ in the Netlify dashboard (no redeploy needed).
 
 Also:
 
-- `scripts/build.mjs`: runs on every Netlify build; writes the git-ignored `public/blocks/index.json` (block list for the builder).
+- `scripts/build.mjs`: writes the git-ignored block list and runtime admin config. The config gets `SHEET_ID` from the build environment.
 - `netlify.toml`: publish `public/`, CORS headers for `/assets/*`, `/blocks/*` and `/embeds/*`, `noindex` for `/admin/` and `/embeds/`.
 
 ## Local development
@@ -62,7 +62,7 @@ Also:
 Requires Node and the Netlify CLI (`npm i -g netlify-cli`).
 
 ```bash
-npm run dev    # runs the build, then `netlify dev` on http://localhost:8888
+SHEET_ID=your-spreadsheet-id npm run dev    # runs the build, then `netlify dev` on http://localhost:8888
 ```
 
 - Builder: http://localhost:8888/admin/
@@ -77,6 +77,8 @@ asset URLs in their direct previews.
 ## Netlify setup
 
 Link the site to this repo (Site configuration → Build & deploy → Link repository). `netlify.toml` provides the settings, so leave the UI build fields empty. Every push to `main` deploys automatically; no cache purging needed.
+
+Set `SHEET_ID` in Netlify's build environment. The generated browser config includes it, so it is not a secret and remains visible to visitors.
 
 ## Content blocks
 

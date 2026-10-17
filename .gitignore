@@ -1,4 +1,5 @@
 node_modules/
 .netlify/
 public/blocks/index.json
+public/assets/js/admin-config.runtime.js
 deno.lock
