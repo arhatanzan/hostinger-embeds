@@ -267,6 +267,7 @@ html,
 /* Thumbnails & Typography */
 .thumb {
     height: auto;
+    aspect-ratio: 16 / 9;
     flex: 0 0 auto;
     border-radius: 6px;
     background: linear-gradient(180deg, #D8D8D8 0%, #FFFFFF 100%);
@@ -280,9 +281,11 @@ html,
 }
 
 .thumb img {
-    max-width: 100%;
-    max-height: none;
-    width: 100%;
+    position: absolute;
+    inset: 0;
+    max-width: min(100%, var(--thumb-natural-width, 100%));
+    max-height: min(100%, var(--thumb-natural-height, 100%));
+    width: auto;
     height: auto;
     object-fit: contain;
     display: block;
@@ -290,10 +293,11 @@ html,
 }
 
 .thumb-fallback {
+    position: absolute;
+    inset: 0;
     display: grid;
     place-items: center;
     width: 100%;
-    min-height: 160px;
     padding: 8px 12px;
     font-size: 14px;
     font-weight: 700;
@@ -657,10 +661,6 @@ html,
     .card-front > .thumb {
         padding: 0;
         margin: 8px 8px 0;
-    }
-
-    .thumb-fallback {
-        min-height: 120px;
     }
 
     .title {

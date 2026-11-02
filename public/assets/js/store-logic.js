@@ -473,7 +473,14 @@ function initStore() {
       if (max > 0) c.style.height = max + "px";
     });
   }
-  refs.grid.addEventListener("load", adjustCardHeights, true);
+  refs.grid.addEventListener("load", event => {
+    const image = event.target;
+    if (image.tagName === "IMG" && image.closest(".thumb")) {
+      image.style.setProperty("--thumb-natural-width", image.naturalWidth + "px");
+      image.style.setProperty("--thumb-natural-height", image.naturalHeight + "px");
+    }
+    adjustCardHeights();
+  }, true);
   refs.grid.addEventListener("error", () => requestAnimationFrame(adjustCardHeights), true);
   (root.host ? root.host.ownerDocument.defaultView : window).addEventListener("resize", adjustCardHeights);
 

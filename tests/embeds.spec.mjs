@@ -224,7 +224,7 @@ test("build rejects masked Sheet values instead of deploying a broken catalog", 
 });
 
 for (const width of [390, 768, 1440]) {
-  test(`catalog images use full width without cropping at ${width}px`, async ({ page }) => {
+  test(`catalog images fit uniform frames without cropping or upscaling at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await mockAssets(page);
     for (const [embed, path] of [["blog", "/blog"], ["product", "/products"], ["lab", "/democracy-lab"]]) {
@@ -232,7 +232,7 @@ for (const width of [390, 768, 1440]) {
       const surface = page.locator(`[data-kb-embed="${embed}"]`);
       const image = surface.locator(".thumb img").first();
       await expect(image).toBeVisible();
-      for (const [imageWidth, imageHeight] of [[300, 180], [180, 300]]) {
+      for (const [imageWidth, imageHeight] of [[1600, 900], [300, 180], [180, 300], [150, 150], [40, 30]]) {
         await image.evaluate((img, dimensions) => {
           img.src = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions[0]}" height="${dimensions[1]}"></svg>`);
         }, [imageWidth, imageHeight]);
@@ -240,10 +240,17 @@ for (const width of [390, 768, 1440]) {
         const dimensions = await image.evaluate(img => ({
           width: img.getBoundingClientRect().width,
           height: img.getBoundingClientRect().height,
-          containerWidth: img.parentElement.getBoundingClientRect().width
+          containerWidth: img.parentElement.getBoundingClientRect().width,
+          containerHeight: img.parentElement.getBoundingClientRect().height,
+          left: img.getBoundingClientRect().left - img.parentElement.getBoundingClientRect().left,
+          top: img.getBoundingClientRect().top - img.parentElement.getBoundingClientRect().top
         }));
-        expect(Math.abs(dimensions.width - dimensions.containerWidth)).toBeLessThan(1);
+        const scale = Math.min(1, dimensions.containerWidth / imageWidth, dimensions.containerHeight / imageHeight);
+        expect(Math.abs(dimensions.containerHeight - dimensions.containerWidth * 9 / 16)).toBeLessThan(1);
+        expect(Math.abs(dimensions.width - imageWidth * scale)).toBeLessThan(1);
         expect(Math.abs(dimensions.height - dimensions.width * imageHeight / imageWidth)).toBeLessThan(1);
+        expect(Math.abs(dimensions.left - (dimensions.containerWidth - dimensions.width) / 2)).toBeLessThan(1);
+        expect(Math.abs(dimensions.top - (dimensions.containerHeight - dimensions.height) / 2)).toBeLessThan(1);
         const insets = await image.evaluate(img => {
           const thumbnail = img.parentElement.getBoundingClientRect();
           const front = img.closest(".card-front").getBoundingClientRect();
@@ -254,6 +261,8 @@ for (const width of [390, 768, 1440]) {
       }
       await image.evaluate(img => { img.src = "data:image/png;base64,invalid"; });
       await expect(surface.locator(".thumb").first().locator(".thumb-fallback")).toBeVisible();
+      const frame = await surface.locator(".thumb").first().boundingBox();
+      expect(Math.abs(frame.height - frame.width * 9 / 16)).toBeLessThan(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   });

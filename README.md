@@ -96,8 +96,10 @@ not claim third-party articles are hosted on this site or invent product offers.
 Blog and Lab default to **8 per page**, with page numbers and Previous/Next
 controls. Products defaults to **All**. Visitors can change the page size,
 including choosing All, and use all filters.
-Card images fill the available width at their natural proportions without
-cropping, with an 8px inset from the card's inner edges on desktop and mobile.
+All catalog thumbnails use a uniform responsive 16:9 frame, with an 8px inset
+from the card's inner edges on desktop and mobile. Images are centered and
+scaled down to fit without cropping, distortion, or upscaling small originals.
+Portrait and square images have space around them rather than changing the frame.
 Card heights are recalculated as lazy-loaded images arrive; missing
 or failed images retain a readable text fallback.
 
