@@ -77,7 +77,15 @@ for (const width of [1440, 390]) {
     await mockAssets(page);
     await hostPage(page);
     const surface = page.locator('[data-kb-embed="blog"]');
-    await expect(surface.locator(".card")).toHaveCount(12);
+    await expect(surface.locator(".card")).toHaveCount(8);
+    await expect(surface.locator("#pageSizeSelect")).toHaveValue("8");
+    await expect(surface.getByRole("button", { name: "← Prev", exact: true })).toBeDisabled();
+    await surface.getByRole("button", { name: "Next →", exact: true }).click();
+    await expect(surface.locator(".card")).toHaveCount(4);
+    await expect(surface.locator(".title").first()).toHaveText("Published item 9");
+    await expect(surface.getByRole("button", { name: "Next →", exact: true })).toBeDisabled();
+    await surface.getByRole("button", { name: "1", exact: true }).click();
+    await expect(surface.locator(".card")).toHaveCount(8);
     await expect(surface.getByRole("heading", { name: "Blog", exact: true })).toBeVisible();
     await expect(page).toHaveTitle("Blog | Kaif Abbas");
     await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /published articles/);
@@ -90,10 +98,13 @@ for (const width of [1440, 390]) {
     await surface.locator("#searchInput").fill("item 1");
     await expect(surface.locator(".card")).toHaveCount(4);
     await surface.getByRole("button", { name: "Reset", exact: true }).click();
-    await expect(surface.locator(".card")).toHaveCount(12);
+    await expect(surface.locator(".card")).toHaveCount(8);
     await surface.locator("#yearSelect").selectOption("2026");
     await surface.locator("#filter2Select").selectOption("jan 2026");
+    await expect(surface.locator(".card")).toHaveCount(8);
+    await surface.locator("#pageSizeSelect").selectOption("all");
     await expect(surface.locator(".card")).toHaveCount(12);
+    await expect(surface.locator("#pagination")).toBeHidden();
     await surface.locator("#pageSizeSelect").selectOption("4");
     await expect(surface.locator(".card")).toHaveCount(4);
     await surface.getByRole("button", { name: "Next", exact: false }).click();
@@ -107,12 +118,21 @@ for (const width of [1440, 390]) {
   });
 }
 
-test("products and lab keep isolated config and expose all published links", async ({ page }) => {
+test("products and lab preserve their page sizes and catalog metadata", async ({ page }) => {
   await mockAssets(page);
   for (const [embed, path, key] of [["product", "/products", "products"], ["lab", "/democracy-lab", "lab"]]) {
     await hostPage(page, { embed, path });
     const surface = page.locator(`[data-kb-embed="${embed}"]`);
-    await expect(surface.locator(".card")).toHaveCount(12);
+    await expect(surface.locator(".card")).toHaveCount(embed === "lab" ? 8 : 12);
+    await expect(surface.locator("#pageSizeSelect")).toHaveValue(embed === "lab" ? "8" : "all");
+    if (embed === "lab") {
+      await surface.getByRole("button", { name: "Next →", exact: true }).click();
+      await expect(surface.locator(".card")).toHaveCount(4);
+      await surface.getByRole("button", { name: "← Prev", exact: true }).click();
+      await expect(surface.locator(".card")).toHaveCount(8);
+    } else {
+      await expect(surface.locator("#pagination")).toBeHidden();
+    }
     await expect(surface.getByRole("heading", { level: 1 })).toBeVisible();
     expect(JSON.parse(await page.locator(`#kb-${key}-jsonld`).textContent()).numberOfItems).toBe(12);
     if (embed === "lab") await expect(surface.getByRole("link", { name: "Play Now" }).first()).toHaveAttribute("href", /www\.kaifabbas\.com\/civic-games\?game=game-example-/);
@@ -160,7 +180,7 @@ for (const sandbox of [false, true]) {
     await mockAssets(page);
     await hostPage(page, { sandbox, iframeOnly: !sandbox });
     await expect(page.locator("[data-kb-embed]")).toHaveCount(0);
-    await expect(page.frameLocator('iframe[title="custom code element"]').locator(".card")).toHaveCount(12);
+    await expect(page.frameLocator('iframe[title="custom code element"]').locator(".card")).toHaveCount(8);
     await expect(page.locator('meta[name="description"]')).toHaveCount(0);
   });
 }
@@ -190,7 +210,7 @@ test("site-wide integration exposes older pasted embeds without duplicate conten
 test("site-wide integration does not clone managed interactive embeds", async ({ page }) => {
   await mockAssets(page);
   await hostPage(page, { siteSeo: true });
-  await expect(page.locator('[data-kb-embed="blog"] .card')).toHaveCount(12);
+  await expect(page.locator('[data-kb-embed="blog"] .card')).toHaveCount(8);
   await expect(page.locator("[data-kb-legacy]")).toHaveCount(0);
 });
 

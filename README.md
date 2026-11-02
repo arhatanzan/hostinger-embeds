@@ -93,8 +93,9 @@ titles/descriptions are maintained in `assets/js/seo.js`; game-specific metadata
 comes from the Games sheet. Existing robots directives are never removed.
 Catalog JSON-LD lists published items and their real destination URLs; it does
 not claim third-party articles are hosted on this site or invent product offers.
-Blog and Lab now default to **All** so every published card/link is rendered
-without a click; visitors can still choose pagination and use all filters.
+Blog and Lab default to **8 per page**, with page numbers and Previous/Next
+controls. Products defaults to **All**. Visitors can change the page size,
+including choosing All, and use all filters.
 
 ### Remaining search-engine steps
 

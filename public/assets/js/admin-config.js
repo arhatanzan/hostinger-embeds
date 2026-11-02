@@ -38,7 +38,7 @@ window.ADMIN_CONFIG = {
 
   // ── Lab (Games) embed ────────────────────────────────────────
   lab: {
-    pageSize: "all",     // Expose every published game on initial render
+    pageSize: "8",       // Show 8 games per page
     pageSizeOptions: ["all", 4, 8, 12, 24],
     sheetId: SHEET_ID,
     sheetName: "Games",
@@ -47,7 +47,7 @@ window.ADMIN_CONFIG = {
 
   // ── Blog embed ───────────────────────────────────────────────
   blog: {
-    pageSize: "all",     // Expose every published post on initial render
+    pageSize: "8",       // Show 8 posts per page
     pageSizeOptions: ["all", 4, 8, 12, 24],
     sheetId: SHEET_ID,
     sheetName: "Blogs",
