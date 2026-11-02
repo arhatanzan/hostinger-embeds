@@ -15,7 +15,14 @@ Every Hostinger "Embed code" element holds a single line. Content, styles and sc
 | Blog | `<script src="https://arhatembeds.netlify.app/assets/js/embed.js" data-embed="blog"></script>` |
 | Any content block | `<script src="https://arhatembeds.netlify.app/assets/js/embed.js" data-block="research"></script>` |
 
-`embed.js` fetches `/embeds/<name>.html` or `/blocks/<name>.html`, inserts it where the tag is, and runs its scripts in order. Hostinger resizes the element to the content automatically.
+`embed.js` fetches `/embeds/<name>.html` or `/blocks/<name>.html` and runs its scripts in order.
+On the live Hostinger site, it renders visible content into an **open shadow root
+in the parent page**, rather than leaving it inside Hostinger's `srcdoc` iframe.
+Styles remain isolated and each embed's scripts retain their own window/config.
+The original iframe stays hidden as the script context; no hidden SEO-only copy
+is added to the parent. Height updates keep Hostinger's layout in sync.
+Direct previews and sandboxed builder previews retain iframe rendering.
+Add `data-render="iframe"` to a snippet to opt out when troubleshooting.
 Netlify's edge-injected badge/toolbar script is excluded from fetched fragments;
 it is page chrome, not embed content. To disable the badge on direct Netlify
 previews too, turn off **Project configuration > General > Powered by Netlify badge**
@@ -46,6 +53,8 @@ in the Netlify dashboard (no redeploy needed).
     text such as `Jan, 2026` / `January 2026`. No new sheet columns are needed.
 - `blocks/`: content-only HTML for the static page sections (research, books, metrics, ...).
 - `assets/js/embed.js`: the one-line loader used on Hostinger.
+- `assets/js/seo.js`: shared host-page metadata and catalog ItemList structured data.
+- `assets/js/site-seo.js`: site-wide integration for older directly pasted static HTML embeds.
 - `assets/js/admin-config.js`: Google Sheet IDs, tab names and per-page defaults. Also loaded by the game pages (`hostinger-civic-games` repo) for the carousel.
 - `assets/js/store-logic.js`, `assets/css/store-style.css`: shared grid logic and styles for the embeds.
 - `assets/css/blocks.css`: shared styles for `blocks/`. `assets/js/blocks.js` is the older `<div data-kb-block>` loader, kept so existing pastes keep working.
@@ -55,7 +64,67 @@ in the Netlify dashboard (no redeploy needed).
 Also:
 
 - `scripts/build.mjs`: writes the git-ignored block list and runtime admin config. The config gets `SHEET_ID` from the build environment.
-- `netlify.toml`: publish `public/`, CORS headers for `/assets/*`, `/blocks/*` and `/embeds/*`, `noindex` for `/admin/` and `/embeds/`.
+- `netlify.toml`: publish `public/`, CORS headers for `/assets/*`, `/blocks/*` and `/embeds/*`, `noindex` for `/admin/` and `/embeds/`. Embed previews allow link following; neither rule is applied to Hostinger pages.
+
+## SEO setup on Hostinger
+
+The live site also has older static HTML pasted directly into Embed code elements
+(including Research, Leadership, Advocacy, Judging, Poetry/Art and the homepage).
+Those do **not** load this repository's loader and cannot be changed by a Netlify
+deploy alone.
+
+After deploying this repository, add the following **once** in Hostinger Website
+Builder's site-wide **Integrations / Custom code** settings, then publish the site:
+
+```html
+<script defer src="https://arhatembeds.netlify.app/assets/js/site-seo.js"></script>
+```
+
+This exposes those older static embeds in the parent page with isolated styling,
+preserving their existing content and links. It observes delayed Hostinger
+hydration and avoids duplicating managed embeds. Interactive legacy embeds with
+their own scripts are deliberately left alone with a console warning; migrate
+those to a supported `embed.js` snippet instead. Third-party frames such as
+YouTube are untouched.
+
+Managed embeds update their own page metadata without this site-wide script.
+The site-wide script also supplies metadata on the other known pages. Page
+titles/descriptions are maintained in `assets/js/seo.js`; game-specific metadata
+comes from the Games sheet. Existing robots directives are never removed.
+Catalog JSON-LD lists published items and their real destination URLs; it does
+not claim third-party articles are hosted on this site or invent product offers.
+Blog and Lab now default to **All** so every published card/link is rendered
+without a click; visitors can still choose pagination and use all filters.
+
+### Remaining search-engine steps
+
+- Keep each Hostinger page's **Hide from search results** setting off for pages
+  you want indexed. Set native SEO titles/descriptions to match `seo.js` too:
+  social preview bots and crawlers without JavaScript do not see injected metadata.
+- Google's renderer can flatten shadow DOM, but JavaScript rendering is still
+  required. This is not server-rendered HTML and does not guarantee indexing,
+  rankings, Google Discover eligibility, or indexing of external article bodies.
+  See [Google's JavaScript SEO guidance](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics).
+- In Google Search Console, inspect `/blog`, `/products`, `/democracy-lab`,
+  `/research-and-publications` and a `/civic-games?game=...` URL using **Test live
+  URL**. Check rendered HTML for actual headings, card links and JSON-LD, then
+  request indexing. Submit `https://www.kaifabbas.com/sitemap.xml`.
+- Hostinger owns the sitemap and robots file, not this repository. The sitemap
+  observed during the audit includes `/home-copy` and `/blog-post2`; review
+  whether these are intended public pages. Hide drafts/duplicates or redirect
+  them in Hostinger as appropriate, then republish.
+
+### Regression tests
+
+```bash
+npm ci
+npx playwright install --with-deps chromium
+npm test
+```
+
+Tests use mocked public Sheet responses and cover host-page content, metadata,
+structured-data URLs, mobile overflow, filters, pagination, game history/messages,
+booking permissions, static/legacy blocks, sandbox fallback and visible failures.
 
 ## Local development
 
@@ -79,6 +148,10 @@ asset URLs in their direct previews.
 Link the site to this repo (Site configuration → Build & deploy → Link repository). `netlify.toml` provides the settings, so leave the UI build fields empty. Every push to `main` deploys automatically; no cache purging needed.
 
 Set `SHEET_ID` in Netlify's build environment. The generated browser config includes it, so it is not a secret and remains visible to visitors.
+If it is marked secret in Netlify, use a remote Netlify build for normal
+deployments. The CLI may return a masked value, which the build now rejects.
+For a local deploy, run `SHEET_ID=actual-id npm run build`, then
+`netlify deploy --prod --no-build` so the CLI does not rebuild with a masked value.
 
 ## Content blocks
 

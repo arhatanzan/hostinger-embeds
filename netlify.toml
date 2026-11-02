@@ -29,7 +29,7 @@
   for = "/embeds/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    X-Robots-Tag = "noindex, nofollow"
+    X-Robots-Tag = "noindex, follow"
 
 [[redirects]]
   from = "/"

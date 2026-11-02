@@ -1,4 +1,6 @@
 <section style="padding: 0; margin: 0;">
+  <h1 id="gameTitle">Civic Games</h1>
+  <p id="gameSummary">Interactive civic games exploring democracy, media and public life.</p>
   <iframe
     id="gameFrame"
     title="Civic game"
@@ -13,7 +15,7 @@
 <script>
   (function () {
     var GAMES_ORIGIN = "https://democracylab.netlify.app";
-    var SITE_URL = "https://kaifabbas.com";
+    var SITE_URL = "https://www.kaifabbas.com";
     var PAGE_PATH = "/civic-games";
     var SITE_NAME = "Civic Games";
     var FALLBACK_GAME = "game-civic-feed";
@@ -107,14 +109,18 @@
       return game || defaultGame();
     }
 
-    var frame = document.getElementById("gameFrame");
+    var root = window.KB_EMBED_ROOT || document;
+    var frame = root.getElementById("gameFrame");
     var current = null;
 
     function load(game) {
       if (game === current) return;
       current = game;
       // host=civic-games tells the carousel to switch games via postMessage instead of reloading the page
-      frame.src = GAMES_ORIGIN + "/games/" + game + ".html?host=civic-games";
+      var gameUrl = GAMES_ORIGIN + "/games/" + game + ".html?host=civic-games";
+      // Only the host URL should add a history entry when switching games.
+      if (frame.getAttribute("src")) frame.contentWindow.location.replace(gameUrl);
+      else frame.src = gameUrl;
       updateSeo(game);
     }
 
@@ -163,7 +169,11 @@
       var title = info.title ? info.title + " | " + SITE_NAME : SITE_NAME;
 
       frame.title = info.title || "Civic game";
+      root.getElementById("gameTitle").textContent = info.title || SITE_NAME;
+      root.getElementById("gameSummary").textContent = info.summary;
       if (topDoc) topDoc.title = title;
+      var pageSchema = topDoc && topDoc.getElementById("kb-page-jsonld");
+      if (pageSchema) pageSchema.remove();
       setCanonical(url);
       setMeta("name", "description", info.summary);
       setMeta("property", "og:type", "website");
@@ -231,8 +241,8 @@
       console.error("Civic games:", err);
     });
 
-    window.addEventListener("message", function (event) {
-      if (event.origin !== GAMES_ORIGIN || !event.data) return;
+    frame.ownerDocument.defaultView.addEventListener("message", function (event) {
+      if (event.origin !== GAMES_ORIGIN || event.source !== frame.contentWindow || !event.data) return;
       if (event.data.type === "resizeIframe") {
         frame.style.height = event.data.height + "px";
       } else if (event.data.type === "selectGame") {

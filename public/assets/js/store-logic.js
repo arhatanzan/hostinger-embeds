@@ -3,6 +3,7 @@ function initStore() {
 
   // 1. Core Configuration
   const config = window.APP_CONFIG || {};
+  const root = window.KB_EMBED_ROOT || document;
 
   // Admin config — resolved first so its values take precedence over APP_CONFIG
   const _adminPage = (window.ADMIN_CONFIG && config.pageKey) ? (window.ADMIN_CONFIG[config.pageKey] || {}) : {};
@@ -28,18 +29,18 @@ function initStore() {
   let currentPage = 1;
 
   const refs = {
-    grid: document.getElementById("grid"),
-    empty: document.getElementById("empty"),
-    categorySelect: document.getElementById("categorySelect"),
-    yearSelect: document.getElementById("yearSelect"),
-    filter2Select: document.getElementById("filter2Select"),
-    filter3Select: document.getElementById("filter3Select"),
-    filter4Select: document.getElementById("filter4Select"),
-    filter5Select: document.getElementById("filter5Select"),
-    pageSizeSelect: document.getElementById("pageSizeSelect"),
-    searchInput: document.getElementById("searchInput"),
-    sortSelect: document.getElementById("sortSelect"),
-    resetBtn: document.getElementById("resetBtn")
+    grid: root.getElementById("grid"),
+    empty: root.getElementById("empty"),
+    categorySelect: root.getElementById("categorySelect"),
+    yearSelect: root.getElementById("yearSelect"),
+    filter2Select: root.getElementById("filter2Select"),
+    filter3Select: root.getElementById("filter3Select"),
+    filter4Select: root.getElementById("filter4Select"),
+    filter5Select: root.getElementById("filter5Select"),
+    pageSizeSelect: root.getElementById("pageSizeSelect"),
+    searchInput: root.getElementById("searchInput"),
+    sortSelect: root.getElementById("sortSelect"),
+    resetBtn: root.getElementById("resetBtn")
   };
 
   if (!refs.grid) return;
@@ -117,6 +118,7 @@ function initStore() {
 
       setupFilters();
       applyFilters();
+      if (window.KB_SEO) window.KB_SEO.updateCollection(root, config.pageKey, PRODUCTS, renderPrimaryAction);
     })
     .catch(err => {
       console.error("Data Fetch Error:", err);
@@ -127,7 +129,7 @@ function initStore() {
     });
 
   /* --- HELPERS --- */
-  function escapeHtml(s) { return (s || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  function escapeHtml(s) { return (s || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function cap(s) { return (s || "").charAt(0).toUpperCase() + (s || "").slice(1); }
 
   function getSummary(p) {
@@ -195,7 +197,7 @@ function initStore() {
       if (p.imageUrl) {
         thumbHtml = `
           <div class="thumb">
-            <img src="${escapeHtml(p.imageUrl)}" loading="lazy"
+            <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" loading="lazy"
                  onerror="this.outerHTML='${fallbackHtml.replace(/"/g, "&quot;")}';"
                  style="transition: opacity 0.3s;">
           </div>`;
@@ -239,7 +241,7 @@ function initStore() {
     refs.grid.style.visibility = "";
 
     // Render pagination controls
-    const paginationWrap = document.getElementById("pagination");
+    const paginationWrap = root.getElementById("pagination");
     if (paginationWrap && pageSize !== "all") {
       paginationWrap.innerHTML = "";
       paginationWrap.style.display = "flex";
@@ -448,7 +450,7 @@ function initStore() {
   });
 
   function adjustCardHeights() {
-    const cards = Array.from(document.querySelectorAll(".card"));
+    const cards = Array.from(root.querySelectorAll(".card"));
     // Override card-inner height too so the 100% chain doesn't collapse during auto measurement
     cards.forEach(c => {
       c.style.height = "auto";
@@ -471,7 +473,7 @@ function initStore() {
       if (max > 0) c.style.height = max + "px";
     });
   }
-  window.addEventListener("resize", adjustCardHeights);
+  (root.host ? root.host.ownerDocument.defaultView : window).addEventListener("resize", adjustCardHeights);
 
   function sendHeight() {
     if (parent && parent.postMessage) parent.postMessage({ type: "resizeIframe", height: document.body.scrollHeight }, "*");

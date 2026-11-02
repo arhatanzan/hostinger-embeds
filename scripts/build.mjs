@@ -6,6 +6,10 @@ const runtimeConfig = new URL("../public/assets/js/admin-config.runtime.js", imp
 const sheetId = process.env.SHEET_ID || "";
 const configSource = readFileSync(configTemplate, "utf8");
 
+if (sheetId && !/^[a-zA-Z0-9_-]+$/.test(sheetId)) {
+  throw new Error("SHEET_ID must be an unmasked Google spreadsheet ID. Netlify CLI redacts secret values; use a remote build or supply the real value to the local build.");
+}
+
 if (!configSource.includes('const SHEET_ID = "__SHEET_ID__";')) {
   throw new Error("SHEET_ID placeholder is missing from admin-config.js");
 }

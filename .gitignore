@@ -3,3 +3,5 @@ node_modules/
 public/blocks/index.json
 public/assets/js/admin-config.runtime.js
 deno.lock
+test-results/
+playwright-report/

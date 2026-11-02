@@ -38,7 +38,7 @@ window.ADMIN_CONFIG = {
 
   // ── Lab (Games) embed ────────────────────────────────────────
   lab: {
-    pageSize: "8",       // Show 8 games per page
+    pageSize: "all",     // Expose every published game on initial render
     pageSizeOptions: ["all", 4, 8, 12, 24],
     sheetId: SHEET_ID,
     sheetName: "Games",
@@ -47,7 +47,7 @@ window.ADMIN_CONFIG = {
 
   // ── Blog embed ───────────────────────────────────────────────
   blog: {
-    pageSize: "8",       // Show 8 posts per page
+    pageSize: "all",     // Expose every published post on initial render
     pageSizeOptions: ["all", 4, 8, 12, 24],
     sheetId: SHEET_ID,
     sheetName: "Blogs",
@@ -67,9 +67,10 @@ window.SWOOP_UTILS = {
   // Returns true if the URL is an internal Hostinger page
   isInternal: function (href) {
     if (!href || href === "#") return true;
+    if (/^(\/(?!\/)|[?#])/.test(href)) return true;
     try {
       const host = new URL(href).hostname.replace(/^www\./, "");
-      return host === "hostinger.com" || host.endsWith(".hostinger.com");
+      return host === "kaifabbas.com" || host === "hostinger.com" || host.endsWith(".hostinger.com");
     } catch (_) { return false; }
   },
 

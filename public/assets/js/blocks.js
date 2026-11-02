@@ -4,25 +4,18 @@
 (function () {
   var base = document.currentScript.src.split("?")[0].replace(/assets\/js\/[^/]+$/, "");
 
-  if (!document.querySelector("link[data-kb-css]")) {
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = base + "assets/css/blocks.css";
-    link.setAttribute("data-kb-css", "");
-    document.head.appendChild(link);
-  }
-
   function load(el) {
     var name = el.getAttribute("data-kb-block");
     if (el.hasAttribute("data-kb-loaded") || !/^[a-z0-9_-]+$/.test(name)) return;
     el.setAttribute("data-kb-loaded", "");
-    fetch(base + "blocks/" + name + ".html")
-      .then(function (res) {
-        if (!res.ok) throw new Error(res.status);
-        return res.text();
-      })
-      .then(function (html) { el.innerHTML = html; })
-      .catch(function (err) { console.error("[kb-blocks] failed to load " + name + ":", err); });
+    var script = document.createElement("script");
+    script.src = base + "assets/js/embed.js";
+    script.setAttribute("data-block", name);
+    script.onerror = function () {
+      el.textContent = "Sorry, this content couldn't load. Please refresh the page.";
+      console.error("[kb-blocks] failed to load " + name);
+    };
+    el.appendChild(script);
   }
 
   function init() {

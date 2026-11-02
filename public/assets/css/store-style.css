@@ -1,5 +1,5 @@
 /* Theme variables */
-:root {
+:root, :host {
     --page-bg: #F8F6F2;
     --card-bg: #FFFFFF;
     --white: #FFFFFF;
@@ -23,7 +23,8 @@
 }
 
 body,
-html {
+html,
+:host {
     margin: 0;
     padding: 0;
     min-height: 800px;

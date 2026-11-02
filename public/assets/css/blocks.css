@@ -5,7 +5,7 @@
   src: local("Calibri"), local("Calibri Regular");
 }
 
-:root {
+:root, :host {
   --kb-gold: #d4a017;
   --kb-navy: #0a2342;
   --kb-cream: #f8f6f2;

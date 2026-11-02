@@ -14,7 +14,12 @@
     return;
   }
 
-  var hostFrame = window.frameElement;
+  var hostFrame = null;
+  try {
+    hostFrame = window.frameElement;
+  } catch (err) {
+    console.warn("[embed] host page is inaccessible; using iframe rendering:", err);
+  }
   var hostContainer = hostFrame && hostFrame.parentElement;
   var hostLayout = hostContainer && hostContainer.parentElement;
   var hostBlock = hostLayout && hostLayout.parentElement;
@@ -104,27 +109,54 @@
   } catch (e) {}
 
   var host = document.createElement("div");
+  var root = document;
+  // Keep each embed's scripts in its own window, but expose visible content on the host page.
+  if (hostFrame && hostFrame.hasAttribute("srcdoc") && me.getAttribute("data-render") !== "iframe") {
+    var surface = hostFrame.ownerDocument.createElement("div");
+    surface.setAttribute("data-kb-embed", name);
+    surface.style.cssText = "display:block;width:100%;min-width:0;";
+    root = surface.attachShadow({ mode: "open" });
+    var reset = hostFrame.ownerDocument.createElement("style");
+    reset.textContent = ":host{display:block;font:16px/1.5 system-ui,sans-serif;text-align:left;color:#0a2342}*{box-sizing:border-box;margin:0;padding:0}iframe{max-width:100%}";
+    root.appendChild(reset);
+    hostContainer.insertBefore(surface, hostFrame);
+    hostFrame.style.display = "none";
+    hostFrame.setAttribute("aria-hidden", "true");
+    hostFrame.setAttribute("tabindex", "-1");
+    window.KB_EMBED_ROOT = root;
+    var syncHeight = function () {
+      hostFrame.ownerDocument.defaultView.postMessage({
+        action: "iframeHeightUpdated",
+        height: surface.getBoundingClientRect().height,
+        id: hostContainer.id
+      }, hostFrame.ownerDocument.location.origin);
+    };
+    new ResizeObserver(syncHeight).observe(surface);
+  } else if (window.parent !== window && !hostFrame) {
+    console.warn("[embed] sandboxed host: content remains inside the iframe");
+  }
   host.style.opacity = "0";
   host.style.transition = "opacity .15s ease";
-  me.parentNode.insertBefore(host, me);
+  if (root === document) me.parentNode.insertBefore(host, me);
+  else root.appendChild(host);
 
   // Only appears if loading is slow, so fast connections never see it flash by.
   var loader = document.createElement("div");
   loader.textContent = "Loading\u2026";
   loader.style.cssText = "font:14px/1.4 system-ui,sans-serif;color:#5a6673;padding:24px;text-align:center;opacity:0;transition:opacity .2s ease .4s;";
-  me.parentNode.insertBefore(loader, me);
+  host.parentNode.insertBefore(loader, host);
   setTimeout(function () { loader.style.opacity = "1"; }, 0);
   function removeLoader() {
     if (loader) { loader.parentNode.removeChild(loader); loader = null; }
   }
 
   var pendingStyles = [];
-  if (block && !document.querySelector("link[data-kb-css]")) {
+  if (block && !root.querySelector("link[data-kb-css]")) {
     var link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = base + "assets/css/blocks.css";
     link.setAttribute("data-kb-css", "");
-    document.head.appendChild(link);
+    (root === document ? document.head : root).appendChild(link);
     pendingStyles.push(link);
   }
 
@@ -145,15 +177,17 @@
   function runScripts(root) {
     return Array.prototype.reduce.call(root.querySelectorAll("script"), function (prev, old) {
       return prev.then(function () {
-        return new Promise(function (resolve) {
+        return new Promise(function (resolve, reject) {
           var s = document.createElement("script");
           Array.prototype.forEach.call(old.attributes, function (a) { s.setAttribute(a.name, a.value); });
           if (old.src) {
-            s.onload = s.onerror = resolve;
+            s.onload = resolve;
+            s.onerror = function () { reject(new Error("Script failed to load: " + s.src)); };
           } else {
             s.textContent = old.textContent;
           }
-          old.parentNode.replaceChild(s, old);
+          old.remove();
+          document.body.appendChild(s);
           if (!old.src) resolve();
         });
       });
@@ -168,7 +202,15 @@
     return controller.signal;
   }
 
-  fetch(contentUrl, { signal: timeoutSignal(20000) })
+  var seoReady = new Promise(function (resolve, reject) {
+    var script = document.createElement("script");
+    script.src = base + "assets/js/seo.js";
+    script.onload = resolve;
+    script.onerror = function () { reject(new Error("SEO helper failed to load")); };
+    document.head.appendChild(script);
+  });
+
+  Promise.all([seoReady, fetch(contentUrl, { signal: timeoutSignal(20000) })
     .then(function (res) {
       if (!res.ok) throw new Error(res.status);
       return res.text();
@@ -190,10 +232,11 @@
       host.appendChild(template.content);
       pendingStyles = pendingStyles.concat(Array.prototype.slice.call(host.querySelectorAll('link[rel="stylesheet"]')));
       return waitForStyles(pendingStyles, 8000);
-    })
+    })])
     .then(function () {
       removeLoader();
       host.style.opacity = "1";
+      window.KB_SEO.updatePage(root);
       return runScripts(host);
     })
     .catch(function (err) {
