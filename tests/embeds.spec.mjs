@@ -222,3 +222,33 @@ test("build rejects masked Sheet values instead of deploying a broken catalog", 
   expect(result.status).not.toBe(0);
   expect(result.stderr).toContain("SHEET_ID must be an unmasked Google spreadsheet ID");
 });
+
+for (const width of [390, 768, 1440]) {
+  test(`catalog images use full width without cropping at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await mockAssets(page);
+    for (const [embed, path] of [["blog", "/blog"], ["product", "/products"], ["lab", "/democracy-lab"]]) {
+      await hostPage(page, { embed, path });
+      const surface = page.locator(`[data-kb-embed="${embed}"]`);
+      const image = surface.locator(".thumb img").first();
+      await expect(image).toBeVisible();
+      for (const [imageWidth, imageHeight] of [[300, 180], [180, 300]]) {
+        await image.evaluate((img, dimensions) => {
+          img.src = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions[0]}" height="${dimensions[1]}"></svg>`);
+        }, [imageWidth, imageHeight]);
+        await expect.poll(() => image.evaluate(img => img.naturalWidth)).toBe(imageWidth);
+        const dimensions = await image.evaluate(img => ({
+          width: img.getBoundingClientRect().width,
+          height: img.getBoundingClientRect().height,
+          containerWidth: img.parentElement.getBoundingClientRect().width
+        }));
+        expect(Math.abs(dimensions.width - dimensions.containerWidth)).toBeLessThan(1);
+        expect(Math.abs(dimensions.height - dimensions.width * imageHeight / imageWidth)).toBeLessThan(1);
+        await expect.poll(() => surface.locator(".card-front").first().evaluate(front => front.scrollHeight - front.clientHeight)).toBeLessThanOrEqual(1);
+      }
+      await image.evaluate(img => { img.src = "data:image/png;base64,invalid"; });
+      await expect(surface.locator(".thumb").first().locator(".thumb-fallback")).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+}

@@ -96,6 +96,9 @@ not claim third-party articles are hosted on this site or invent product offers.
 Blog and Lab default to **8 per page**, with page numbers and Previous/Next
 controls. Products defaults to **All**. Visitors can change the page size,
 including choosing All, and use all filters.
+Card images fill the available width at their natural proportions without
+cropping. Card heights are recalculated as lazy-loaded images arrive; missing
+or failed images retain a readable text fallback.
 
 ### Remaining search-engine steps
 

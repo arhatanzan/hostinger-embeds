@@ -266,7 +266,7 @@ html,
 
 /* Thumbnails & Typography */
 .thumb {
-    height: 160px;
+    height: auto;
     flex: 0 0 auto;
     border-radius: 6px;
     background: linear-gradient(180deg, #D8D8D8 0%, #FFFFFF 100%);
@@ -280,9 +280,9 @@ html,
 }
 
 .thumb img {
-    max-width: calc(100% - 12px);
-    max-height: calc(100% - 12px);
-    width: auto;
+    max-width: 100%;
+    max-height: none;
+    width: 100%;
     height: auto;
     object-fit: contain;
     display: block;
@@ -290,6 +290,10 @@ html,
 }
 
 .thumb-fallback {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 160px;
     padding: 8px 12px;
     font-size: 14px;
     font-weight: 700;
@@ -650,8 +654,12 @@ html,
         padding-top: 12px;
     }
 
-    .thumb {
-        height: 120px;
+    .card-front > .thumb {
+        padding: 0;
+    }
+
+    .thumb-fallback {
+        min-height: 120px;
     }
 
     .title {

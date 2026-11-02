@@ -473,6 +473,8 @@ function initStore() {
       if (max > 0) c.style.height = max + "px";
     });
   }
+  refs.grid.addEventListener("load", adjustCardHeights, true);
+  refs.grid.addEventListener("error", () => requestAnimationFrame(adjustCardHeights), true);
   (root.host ? root.host.ownerDocument.defaultView : window).addEventListener("resize", adjustCardHeights);
 
   function sendHeight() {
