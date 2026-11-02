@@ -656,6 +656,7 @@ html,
 
     .card-front > .thumb {
         padding: 0;
+        margin: 8px 8px 0;
     }
 
     .thumb-fallback {

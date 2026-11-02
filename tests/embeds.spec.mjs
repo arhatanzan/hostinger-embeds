@@ -244,6 +244,12 @@ for (const width of [390, 768, 1440]) {
         }));
         expect(Math.abs(dimensions.width - dimensions.containerWidth)).toBeLessThan(1);
         expect(Math.abs(dimensions.height - dimensions.width * imageHeight / imageWidth)).toBeLessThan(1);
+        const insets = await image.evaluate(img => {
+          const thumbnail = img.parentElement.getBoundingClientRect();
+          const front = img.closest(".card-front").getBoundingClientRect();
+          return [thumbnail.left - front.left, front.right - thumbnail.right, thumbnail.top - front.top];
+        });
+        for (const inset of insets) expect(Math.abs(inset - 8)).toBeLessThan(1);
         await expect.poll(() => surface.locator(".card-front").first().evaluate(front => front.scrollHeight - front.clientHeight)).toBeLessThanOrEqual(1);
       }
       await image.evaluate(img => { img.src = "data:image/png;base64,invalid"; });
